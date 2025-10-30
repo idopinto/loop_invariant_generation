@@ -1,0 +1,7 @@
+paths:
+  project: /cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv
+  uautomizer: /cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py
+  yml_eval_easy_dir: /cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/Dataset/Evaluation/Easy/yml
+  c_eval_easy_dir: /cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/Dataset/Evaluation/Easy/c
+  properties_dir: /cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/Dataset/Properties
+  

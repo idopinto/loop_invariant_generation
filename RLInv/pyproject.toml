@@ -1,0 +1,67 @@
+[project]
+name = "rlinv"
+version = "0.1.0"
+description = "Loop Invariant Generation using Reinforcement Learning"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    {name = "Ido Pinto", email = "ido.pinto@mail.huji.ac.il"},
+]
+keywords = ["loop-invariants", "verification", "reinforcement-learning"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+]
+
+# Core dependencies (always required)
+dependencies = [
+    "pandas>=2.3.3",
+    "pycparser>=2.23",
+    "pytest>=8.4.2",
+    "python-dotenv>=1.1.1",
+    "pyyaml>=6.0.3",
+    "together>=1.5.26",
+    "tqdm>=4.67.1",
+]
+
+# Optional dependencies for different features
+[project.optional-dependencies]
+ai = [
+    "openai>=2.5.0",
+    "together>=1.5.26",
+]
+dev = [
+    "pytest>=7.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=1.0.0",
+]
+all = [
+    "rlinv[ai,dev]",
+]
+
+# Console scripts
+[project.scripts]
+rlinv-eval = "src.eval.evaluate:main"
+
+# Build system
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Package configuration
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+# Tool configurations
+[tool.black]
+line-length = 88
+target-version = ['py313']
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true

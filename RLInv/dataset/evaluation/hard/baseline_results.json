@@ -1,0 +1,42 @@
+[
+  {
+    "base_filename": "freire2_unwindbound1_4",
+    "decision": "Verified",
+    "baseline_timing": 118.525021251,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
+  },
+  {
+    "base_filename": "geo3-ll_unwindbound1_2",
+    "decision": "Verified",
+    "baseline_timing": 47.35915299502085,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
+  },
+  {
+    "base_filename": "bresenham-ll_unwindbound10_2",
+    "decision": "Falsified",
+    "baseline_timing": 259.76254981101374,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound5_9",
+    "decision": "Verified",
+    "baseline_timing": 40.37581939500524,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
+  },
+  {
+    "base_filename": "egcd3-ll_unwindbound10_3",
+    "decision": "Verified",
+    "baseline_timing": 15.045945727993967,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
+  }
+]

@@ -1,0 +1,11 @@
+.env
+.venv
+slurm/
+*.out
+*.err
+.DS_Store
+tools/uautomizer/
+*.log
+experiments/
+_pycache_
+.pytest_cache/
