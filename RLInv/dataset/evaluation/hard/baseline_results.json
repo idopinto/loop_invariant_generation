@@ -270,5 +270,45 @@
     "architecture": "32bit",
     "property_file": "unreach-call.prp",
     "expected_answer": "unknown"
+  },
+  {
+    "base_filename": "rewnifrev2_1",
+    "decision": "Verified",
+    "baseline_timing": 173.73288860399043,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound2_8",
+    "decision": "Verified",
+    "baseline_timing": 24.431568158994196,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
+  },
+  {
+    "base_filename": "hard-u_valuebound1_6",
+    "decision": "Verified",
+    "baseline_timing": 28.75041071299347,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
+  },
+  {
+    "base_filename": "geo1-ll_unwindbound2_2",
+    "decision": "Verified",
+    "baseline_timing": 61.369777414016426,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound50_9",
+    "decision": "Verified",
+    "baseline_timing": 48.52157977697789,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": "unknown"
   }
 ]
