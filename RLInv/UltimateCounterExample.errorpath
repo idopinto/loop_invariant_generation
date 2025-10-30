@@ -1,152 +1,96 @@
-[L25]              int counter = 0;
-       VAL         [counter=0]
-[L27]              int X, Y;
-[L28]              long long x, y, v, xy, yx;
-[L29]              X = __VERIFIER_nondet_int()
-[L30]              Y = __VERIFIER_nondet_int()
-[L31]              v = ((long long)2 * Y) - X
-[L32]              y = 0
-[L33]              x = 0
-       VAL         [X=19, Y=1, counter=0, v=-17, x=0, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=1, v=-17, x=0, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=1, v=-17, x=0, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=1, v=-17, x=0, y=0]
-[L43]  COND TRUE   v < 0
-[L44]              v = v + (long long)2 * Y
-       VAL         [X=19, Y=1, counter=1, v=-15, x=0, y=0]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=1, v=-15, x=1, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=2, v=-15, x=1, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=2, v=-15, x=1, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=2, v=-15, x=1, y=0]
-[L43]  COND TRUE   v < 0
-[L44]              v = v + (long long)2 * Y
-       VAL         [X=19, Y=1, counter=2, v=-13, x=1, y=0]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=2, v=-13, x=2, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=3, v=-13, x=2, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=3, v=-13, x=2, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=3, v=-13, x=2, y=0]
-[L43]  COND TRUE   v < 0
-[L44]              v = v + (long long)2 * Y
-       VAL         [X=19, Y=1, counter=3, v=-11, x=2, y=0]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=3, v=-11, x=3, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=4, v=-11, x=3, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=4, v=-11, x=3, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=4, v=-11, x=3, y=0]
-[L43]  COND TRUE   v < 0
-[L44]              v = v + (long long)2 * Y
-       VAL         [X=19, Y=1, counter=4, v=-9, x=3, y=0]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=4, v=-9, x=4, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=5, v=-9, x=4, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=5, v=-9, x=4, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=5, v=-9, x=4, y=0]
-[L43]  COND TRUE   v < 0
-[L44]              v = v + (long long)2 * Y
-       VAL         [X=19, Y=1, counter=5, v=-7, x=4, y=0]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=5, v=-7, x=5, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=6, v=-7, x=5, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=6, v=-7, x=5, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=6, v=-7, x=5, y=0]
-[L43]  COND TRUE   v < 0
-[L44]              v = v + (long long)2 * Y
-       VAL         [X=19, Y=1, counter=6, v=-5, x=5, y=0]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=6, v=-5, x=6, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=7, v=-5, x=6, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=7, v=-5, x=6, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=7, v=-5, x=6, y=0]
-[L43]  COND TRUE   v < 0
-[L44]              v = v + (long long)2 * Y
-       VAL         [X=19, Y=1, counter=7, v=-3, x=6, y=0]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=7, v=-3, x=7, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=8, v=-3, x=7, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=8, v=-3, x=7, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=8, v=-3, x=7, y=0]
-[L43]  COND TRUE   v < 0
-[L44]              v = v + (long long)2 * Y
-       VAL         [X=19, Y=1, counter=8, v=-1, x=7, y=0]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=8, v=-1, x=8, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=9, v=-1, x=8, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=9, v=-1, x=8, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=9, v=-1, x=8, y=0]
-[L43]  COND TRUE   v < 0
-[L44]              v = v + (long long)2 * Y
-       VAL         [X=19, Y=1, counter=9, v=1, x=8, y=0]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=9, v=1, x=9, y=0]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=10, v=1, x=9, y=0]
-[L35]  COND TRUE   counter++ < 10
-[L36]              yx = (long long)Y * x
-[L37]              xy = (long long)X * y
-       VAL         [X=19, Y=1, counter=10, v=1, x=9, y=0]
-[L38]  COND FALSE  !(!(x <= X))
-       VAL         [X=19, Y=1, counter=10, v=1, x=9, y=0]
-[L43]  COND FALSE  !(v < 0)
-[L46]              v = v + 2 * ((long long)Y - X)
-[L47]              y++
-       VAL         [X=19, Y=1, counter=10, v=-35, x=9, y=1]
-[L49]              x++
-       VAL         [X=19, Y=1, counter=10, v=-35, x=10, y=1]
-[L35]  EXPR        counter++
-       VAL         [X=19, Y=1, counter=11, v=-35, x=10, y=1]
-[L35]  COND FALSE  !(counter++ < 10)
-[L51]              xy = (long long)x * y
-[L52]              yx = (long long)Y * x
-[L53]  CALL        __VERIFIER_assert(2 * yx - 2 * xy - X + (long long)2 * Y - v + 2 * y == 0)
-[L19]  COND TRUE   !(cond)
-       VAL         [counter=11]
-[L20]              reach_error()
-       VAL         [counter=11]
+[L30]              int N;
+       VAL         [N=0]
+[L33]              N = __VERIFIER_nondet_int()
+[L34]  COND FALSE  !(N <= 0)
+[L37]  CALL        assume_abort_if_not(N <= 2147483647 / sizeof(int))
+[L15]  COND FALSE  !(!cond)
+       VAL         [N=3]
+[L37]  RET         assume_abort_if_not(N <= 2147483647 / sizeof(int))
+[L39]              int i;
+[L40]              long long *a = malloc(sizeof(long long) * N);
+[L41]              long long *b = malloc(sizeof(long long) * N);
+[L42]              long long *c = malloc(sizeof(long long) * N);
+[L44]              a[0] = 6
+[L45]              b[0] = 1
+[L46]              c[0] = 0
+[L48]              i = 1
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=1]
+[L48]  COND TRUE   i < N
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=1]
+[L49]  EXPR        a[i - 1]
+[L49]              a[i] = a[i - 1] + 6
+[L48]              i++
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=2]
+[L48]  COND TRUE   i < N
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=2]
+[L49]  EXPR        a[i - 1]
+[L49]              a[i] = a[i - 1] + 6
+[L48]              i++
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=3]
+[L48]  COND FALSE  !(i < N)
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}]
+[L52]              i = 1
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=1]
+[L52]  COND TRUE   i < N
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=1]
+[L53]  EXPR        b[i - 1]
+[L53]  EXPR        a[i - 1]
+[L53]              b[i] = b[i - 1] + a[i - 1]
+[L52]              i++
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=2]
+[L52]  COND TRUE   i < N
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=2]
+[L53]  EXPR        b[i - 1]
+[L53]  EXPR        a[i - 1]
+[L53]              b[i] = b[i - 1] + a[i - 1]
+[L52]              i++
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=3]
+[L52]  COND FALSE  !(i < N)
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}]
+[L56]              i = 1
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=1]
+[L56]  COND TRUE   i < N
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=1]
+[L57]  EXPR        c[i - 1]
+[L57]  EXPR        b[i - 1]
+[L57]              c[i] = c[i - 1] + b[i - 1]
+[L56]              i++
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=2]
+[L56]  COND TRUE   i < N
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=2]
+[L57]  EXPR        c[i - 1]
+[L57]  EXPR        b[i - 1]
+[L57]              c[i] = c[i - 1] + b[i - 1]
+[L56]              i++
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=3]
+[L56]  COND FALSE  !(i < N)
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}]
+[L60]              i = 0
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=0]
+[L60]  COND TRUE   i < N
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=0]
+[L61]  EXPR        c[i]
+[L61]  CALL        __VERIFIER_assert(c[i] == i * i)
+[L20]  COND FALSE  !(!(cond))
+       VAL         [N=3]
+[L61]  RET         __VERIFIER_assert(c[i] == i * i)
+[L60]              i++
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=1]
+[L60]  COND TRUE   i < N
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=1]
+[L61]  EXPR        c[i]
+[L61]  CALL        __VERIFIER_assert(c[i] == i * i)
+[L20]  COND FALSE  !(!(cond))
+       VAL         [N=3]
+[L61]  RET         __VERIFIER_assert(c[i] == i * i)
+[L60]              i++
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=2]
+[L60]  COND TRUE   i < N
+       VAL         [N=3, a={-3:0}, b={-1:0}, c={-2:0}, i=2]
+[L61]  EXPR        c[i]
+[L61]  CALL        __VERIFIER_assert(c[i] == i * i)
+[L20]  COND TRUE   !(cond)
+       VAL         [N=3]
+[L22]              reach_error()
+       VAL         [N=3]
 

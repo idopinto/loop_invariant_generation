@@ -3,10 +3,10 @@
 slurm/
 *.out
 *.err
-.DS_Store
-tools/uautomizer/
+*.errorpath
 *.log
+tools/
 experiments/
+.DS_Store
 _pycache_
 .pytest_cache/
-tools/UltimateAutomizer-linux.zip
