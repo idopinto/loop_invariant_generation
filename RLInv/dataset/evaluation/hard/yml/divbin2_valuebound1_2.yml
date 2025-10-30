@@ -5,4 +5,4 @@ options:
   language: C
 properties:
 - expected_verdict: true
-  property_file: ../properties/unreach-call.prp
+  property_file: unreach-call.prp
