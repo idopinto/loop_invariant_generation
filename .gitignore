@@ -8,3 +8,4 @@ RLInv/.DS_Store
 RLInv/_pycache_
 RLInv/.pytest_cache/
 RLInv/Ultimate.log
+RLInv/*.errorpath
