@@ -9,6 +9,7 @@ from src.utils.plain_verifier import VerifierCallReport, Decision
 @dataclass
 class DecisionProcedureReport:
     final_decision: Decision = Decision.Unknown
+    decision_rule: str = ""
     program: Optional[Program] = None
     target_assert: Optional[Predicate] = None
     target_property_file_path: Optional[Path] = None
@@ -25,6 +26,7 @@ class DecisionProcedureReport:
         """Convert the report to a dictionary for JSON serialization."""
         return {
             'final_decision': self.final_decision.name,
+            'decision_rule': self.decision_rule,
             'target_assert': {
                 'content': self.target_assert.content,
                 'line_number': self.target_assert.line_number
@@ -56,6 +58,9 @@ class DecisionProcedureReport:
             data = json.load(f)
         
         # Reconstruct nested objects
+        decision_rule = ""
+        if data.get('decision_rule'):
+            decision_rule = data['decision_rule']
         target_assert = None
         if data.get('target_assert'):
             target_assert = Predicate(
@@ -94,6 +99,7 @@ class DecisionProcedureReport:
         
         return cls(
             final_decision=Decision[data['final_decision']],
+            decision_rule=decision_rule,
             program=None,  # Program object is not serialized
             target_assert=target_assert,
             target_property_file_path=Path(data['target_property_file_path']) if data.get('target_property_file_path') else None,

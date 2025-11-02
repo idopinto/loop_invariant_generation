@@ -91,11 +91,14 @@ def calculate_metrics(model_full_results: dict, baseline_results: List[Dict], in
     for result in model_results:
         # print(f"--------------------------------")
         # Check if invariant is correct (invariant_correctness_report is Verified)
-        report = result.get("report", {})   
-        correctness_report_decision = report.get("invariant_correctness_report", {}).get("decision")
-        # print(f"Correctness report decision: {correctness_report_decision}")
-        if correctness_report_decision == "Verified":
-            correct_count += 1
+        report = result.get("report", {}) 
+        invariant_correctness_report = report.get("invariant_correctness_report", {})
+        if invariant_correctness_report:
+            correctness_report_decision = invariant_correctness_report.get("decision")
+            if correctness_report_decision == "Verified":
+                correct_count += 1
+        else:
+            correctness_report_decision = "Unknown"
         # Calculate speedup
         # task_name is already the YML file stem (matching baseline's base_filename)
         base_filename = result.get("task_name", "")

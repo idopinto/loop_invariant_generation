@@ -1,39 +1,14 @@
+from asyncio import Task
 import datetime
 
-import pycparser
 import yaml
 import argparse
 import subprocess
 import os
 from os.path import join, basename, abspath
 from pathlib import Path
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="GPT4MC.")
-    parser.add_argument("input", help="Path to the yaml file.")
-    parser.add_argument("-v", "--verifier", type=str, default="esbmc",
-                        choices=["uautomizer", "cbmc", "esbmc", "2ls", "seahorn", "all"],
-                        help="Verifier uautomizer/cbmc/esbmc/2ls/seahorn/all.")
-    parser.add_argument("--prop", type=str, default="reach", choices=["term", "reach"],
-                        help="Property type term/reach.")
-    parser.add_argument("--learn", action="store_true", help="Use GPT?")
-    parser.add_argument("-w", "--working-dir", type=str, default="./data/", help="Working directory")
-    parser.add_argument("--verbosity", type=int, default=1, help="Verbosity")
-    parser.add_argument("--seed", type=int, default=1, help="Seed")
-    parser.add_argument("--num-assertions", type=int, default=2, help="Number of assertions")
-    parser.add_argument("--num-attempts", type=int, default=4, help="Number of attempts for GPT")
-    parser.add_argument("--simulate", action="store_true", help="Simulate?")
-    parser.add_argument("--no-repair", action="store_true", help="Does not perform refinement")
-    parser.add_argument("--per-instance-timeout", type=int, default=900, help="Per-instance timeout")
-    parser.add_argument("--model", type=str, default="gpt-4", choices=["gpt-4", "gpt-3.5-turbo"],
-                        help="Model")
-
-    args = parser.parse_args()
-    print("-------------Arguments-------------------")
-    for key, value in args.__dict__.items():
-        print(f"{key}: {value}")
-    print("-------------------------------------------------------------")
-    return args
+from typing import List, Dict
+import json
 
 
 def load_yaml_file(file_path):
@@ -82,7 +57,6 @@ def run_subprocess_and_get_output(command):
     p = subprocess.run(command.split(), capture_output=True)
     return p.stdout.decode('utf-8', errors='replace'), p.stderr.decode('utf-8', errors='replace')
 
-import datetime
 
 def create_working_dir(working_dir: Path, c_filename: Path, property_kind: str):
     # Create base directory without timestamp
@@ -125,43 +99,27 @@ def red(text : str) -> str:
 def blue(text : str) -> str:
    return color.BLUE + text + color.END
 
-def check_equivalence(c1, c2):
-    # parse the statements into ASTs
+def load_dataset(dataset_path: Path, property_kind: str = "unreach", limit: int = None) -> List[Task]:
+    """Load dataset from YAML files."""
+    from src.utils.task import Task  # Import here to avoid circular import
+    tasks = []
+    print(f"Loading dataset from: {dataset_path}")
+    for yml_file in dataset_path.glob("*.yml"):
+        # print(yml_file)s
+        if limit is not None and len(tasks) >= limit:
+            break
+        task = Task(yml_file_path=yml_file, property_kind=property_kind)
+        tasks.append(task)
+    return tasks
+
+def load_baseline_results(baseline_file: Path) -> List[Dict]:
+    """Load baseline results from JSON file. If the file does not exist, return an empty list."""
+    if not baseline_file.exists():
+        print(f"Warning: Baseline file not found at {baseline_file}, using default timeouts")
+        return []
     try:
-        ast1 = pycparser.c_parser.CParser().parse("void main() {" + f"assert({c1});" + "}")
-        ast2 = pycparser.c_parser.CParser().parse("void main() {" + f"assert({c2});" + "}")
-
-        # Compare the ASTs recursively
-        return compare_nodes(ast1, ast2)
-    except:
-        return False
-
-def compare_nodes(node1, node2):
-    # Check if both nodes are None
-    if node1 is None and node2 is None:
-        return True
-
-    # Check if one node is None and the other is not
-    if node1 is None or node2 is None:
-        return False
-
-    # Check if both nodes have the same class
-    if type(node1) != type(node2):
-        return False
-
-    # Check if both nodes have the same attributes
-    for attr in node1.attr_names:
-        if getattr(node1, attr) != getattr(node2, attr):
-            return False
-
-    # Check if both nodes have the same number of children
-    if len(node1.children()) != len(node2.children()):
-        return False
-
-    # Compare the children recursively
-    for child1, child2 in zip(node1.children(), node2.children()):
-        if not compare_nodes(child1[1], child2[1]):
-            return False
-
-    # If all checks passed, return True
-    return True
+        with open(baseline_file, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Warning: Failed to load baseline results from {baseline_file}: {e}, using default timeouts")
+        return []

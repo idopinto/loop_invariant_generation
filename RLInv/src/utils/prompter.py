@@ -7,13 +7,14 @@ from time import perf_counter
 import json
 import re
 from os.path import join, isfile
-
+import os
 # Add the project root to Python path for imports
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from .program import Program, AssertionPointAttributes
 from .predicate import Predicate
+from .equivalence import check_syntactic_equivalence as check_equivalence
 from copy import copy
 
 replacements = {"UCHAR_MAX": "0xff", "UINT_MAX": "0xffffffff"}

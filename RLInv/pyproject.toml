@@ -30,6 +30,7 @@ dependencies = [
     "seaborn>=0.13.2",
     "together>=1.5.26",
     "tqdm>=4.67.1",
+    "z3-solver>=4.15.4.0",
 ]
 
 # Optional dependencies for different features

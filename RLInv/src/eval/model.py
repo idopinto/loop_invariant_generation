@@ -72,6 +72,7 @@ assert(<predicate>); // Line <label>
 Where:
 - <predicate> is a valid boolean C expression (use && for AND, || for OR)
 - <label> is one of the available location labels ({available_labels})
+- DO NOT repeat the target assert in the invariant you produce not even as a partial expression. suggest only new loop invariants that imply it.
 - Prefer equality over inequality when possible
 - Don't include explanations, just the assert statement
 
@@ -135,9 +136,8 @@ assert(x >= 0 && y < 100); // Line A"""
     
     def _call_model_api(self, system_msg: str, user_msg: str) -> str:
         """Call the Together API and return response content."""
-        print("-" * 80)
-        # print(f"System msg:\n{system_msg}")
-        # print(f"User msg:\n{user_msg}")
+        print(f"\nSystem msg:\n{system_msg}")
+        print(f"\nUser msg:\n{user_msg}")
         response = self.client.chat.completions.create(
             model=self.model_path_or_name,
             messages=[
@@ -149,12 +149,14 @@ assert(x >= 0 && y < 100); // Line A"""
         reasoning = response.choices[0].message.reasoning
         raw_response = response.choices[0].message.content
         usage = response.usage
-        print("-" * 80)
-        print(f"Reasoning: {reasoning}")
+        print("\n" + "="*80)
+        # print(f"Reasoning: {reasoning}")
+        # print the reasoning in a more readable format, split by dots and print each dot on a new line
+        for dot in reasoning.split('.'):
+            print(f"{dot.strip()}.")
         print(f"Raw response: {raw_response[:200]}...")
-        print("-" * 80)
         print(f"Usage: {usage}")
-        print("-" * 80)
+        print("\n" + "="*80)
         return {"reasoning": reasoning, "raw_response": raw_response, "usage": usage}
     
     def generate_candidate_invariant(self, program: Program) -> Predicate:

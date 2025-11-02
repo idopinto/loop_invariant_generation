@@ -11,9 +11,10 @@ from src.utils.program import Program
 from src.utils.predicate import Predicate
 from src.eval.decision_procedure_report import DecisionProcedureReport
 from src.utils.validate import syntactic_validation
-UAUTOMIZER_EXECUTABLE_PATH = '/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py'
+from src.utils.equivalence import check_semantic_equivalence
+# UAUTOMIZER_EXECUTABLE_PATH = '/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py'
 class DecisionProcedure:
-    def __init__(self, program: Program, target_property_file_path: str, code_dir: str, uautomizer_executable_path: str, default_timeout_seconds: float = 30.0):
+    def __init__(self, program: Program, target_property_file_path: Path, code_dir: Path, uautomizer_executable_path: Path, timeout_seconds: float = 600.0):
         self.program = program
         self.target_property_file_path = target_property_file_path # "unreach-call.prp"
         # Get the target assert from the program's assertions
@@ -29,8 +30,8 @@ class DecisionProcedure:
         self.reports_dir = Path(code_dir).parent / "reports"
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         # print(f"Reports directory created: {self.reports_dir}")
-        self.default_timeout_seconds = max(0.1, float(default_timeout_seconds))
-        
+        self.timeout_seconds = max(0.1, float(timeout_seconds))
+        self.uautomizer_executable_path = uautomizer_executable_path
     
     def run_verifier(self, program_str: str, property_file_path: Path, timeout_seconds: float, kind: str):
         c_file_path = self.code_dir / f"code_for_{kind}.c"
@@ -39,7 +40,7 @@ class DecisionProcedure:
             out_file.write(program_str)
             # print(f"Program written to file:\n {c_file_path}")
             # print(f"```c\n{program_str}\n```")
-        verifier_report: VerifierCallReport = run_uautomizer(uautomizer_path=UAUTOMIZER_EXECUTABLE_PATH, 
+        verifier_report: VerifierCallReport = run_uautomizer(uautomizer_path=self.uautomizer_executable_path, 
                                 c_file_path=c_file_path, 
                                 property_file_path=property_file_path,
                                 reports_dir=self.reports_dir,
@@ -79,7 +80,7 @@ class DecisionProcedure:
                 self.run_verifier,
                 program_str=program_for_correctness,
                 property_file_path=self.target_property_file_path,
-                timeout_seconds=self.default_timeout_seconds,
+                timeout_seconds=self.timeout_seconds,
                 kind="correctness"
             )
             
@@ -87,7 +88,7 @@ class DecisionProcedure:
                 self.run_verifier,
                 program_str=program_for_usefullness,
                 property_file_path=self.target_property_file_path,
-                timeout_seconds=self.default_timeout_seconds,
+                timeout_seconds=self.timeout_seconds,
                 kind="usefulness"
             )
             
@@ -112,6 +113,7 @@ class DecisionProcedure:
                         # We have what we need for DEC-FALSE, break early
                         break
         
+        decision_rule = ""
         # Apply decision calculus
         final_decision = Decision.Unknown
         
@@ -119,6 +121,7 @@ class DecisionProcedure:
         # This is a "short-circuit" because da doesn't need to be T to decide F
         if invariant_usefulness_report.decision == Decision.Falsified:
             final_decision = Decision.Falsified
+            decision_rule = "DEC-FALSE"
         
         # DEC_PROP: If da = T and db ∈ {T, U}, decide db
         # Rule DEC-PROP implements the provethen-use strategy: 
@@ -128,6 +131,7 @@ class DecisionProcedure:
               invariant_correctness_report.decision == Decision.Verified and 
               invariant_usefulness_report.decision in {Decision.Verified, Decision.Unknown}):
             final_decision = invariant_usefulness_report.decision
+            decision_rule = "DEC-PROP"
         
         # DEC-U: If da ≠ T and db ≠ F, decide U
         # Rule DEC-U gives explicit conditions for inconclusiveness:
@@ -136,11 +140,12 @@ class DecisionProcedure:
               invariant_correctness_report.decision != Decision.Verified and 
               invariant_usefulness_report.decision != Decision.Falsified):
             final_decision = Decision.Unknown
+            decision_rule = "DEC-U"
         # If correctness was cancelled (short-circuited), we already decided F above
         elif invariant_correctness_report is None:
             # This should only happen when DEC-FALSE was triggered
             # (decision already set to Falsified above)
-            pass
+            decision_rule = "DEC-FALSE"
         
         # Calculate verification time: max of both runs since they execute in parallel
         # Use 0 if correctness was cancelled (short-circuited)
@@ -150,6 +155,7 @@ class DecisionProcedure:
         # total_time_taken will be set to verification_time_taken + model_generation_time by caller
         final_report = DecisionProcedureReport(
             final_decision=final_decision,
+            decision_rule=decision_rule,
             program=self.program,
             target_assert=self.target_assert,
             target_property_file_path=self.target_property_file_path,
@@ -157,21 +163,22 @@ class DecisionProcedure:
             syntactic_validation_result=True,
             invariant_correctness_report=invariant_correctness_report,
             invariant_usefulness_report=invariant_usefulness_report,
-            total_time_taken=verification_time_taken,  # Will be updated by caller with model gen time
             verification_time_taken=verification_time_taken,
-            model_generation_time=0.0)  # Will be set by caller
+        )  
         return final_report
     
-    def run(self, candidate_invariant: Predicate) -> DecisionProcedureReport:
-        final_report = DecisionProcedureReport()
+    def run(self, candidate_invariant: Predicate, model_gen_time: float) -> DecisionProcedureReport:
+        final_report = DecisionProcedureReport(model_generation_time=model_gen_time)
         is_valid = syntactic_validation(candidate_invariant.content)
+        is_logicaly_equivalent = check_semantic_equivalence(candidate_invariant.content, self.target_assert.content)
         print(f"The candidate invariant is valid: {is_valid}")
-        if is_valid:
+        print(f"The candidate invariant is logically equivalent to the target assert: {is_logicaly_equivalent}")
+        if is_valid and not is_logicaly_equivalent:
            final_report = self.decide(candidate_invariant)
-           
-        # Save the final report as JSON
+           final_report.total_time_taken = final_report.verification_time_taken + model_gen_time
+        # save the final report to a json file
         report_file_path = self.reports_dir / "decision_report.json"
         final_report.save_json(report_file_path)
-        # print(f"Decision report saved to: {report_file_path}")
-            
+        print(f"Decision report saved to:\n\t {report_file_path.relative_to(self.code_dir.parent.parent)}")
         return final_report
+    
