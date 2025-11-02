@@ -174,8 +174,7 @@ def run_uautomizer(
 if __name__ == "__main__":
     # --- IMPORTANT: UPDATE THESE PATHS ---
     # This should be the path to the script in your UAutomizer directory.
-    UAUTOMIZER_EXECUTABLE_PATH = '/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomaizer/Ultimate.py'
-    # This is your test C file.
+    UAUTOMIZER_EXECUTABLE_PATH = '/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py'
     C_FILE_PATH = 'dataset/evaluation/problem.c'
     # This is the property file, likely located in the 'config' subdirectory.
     SPEC_FILE_PATH = 'dataset/properties/unreach-call.prp' # <-- UPDATE IF NEEDED
@@ -186,13 +185,13 @@ if __name__ == "__main__":
     print(f"Program: {program}")
     # Create a reports directory for this example
     reports_dir = Path("example_reports")
-    
+    reports_dir.mkdir(parents=True, exist_ok=True)
     verification_result = run_uautomizer(
         uautomizer_path=UAUTOMIZER_EXECUTABLE_PATH,
         c_file_path=C_FILE_PATH,
         property_file_path=SPEC_FILE_PATH,
         reports_dir=reports_dir,
-        arch="64bit", # Explicitly set architecture
+        arch="32bit", # Explicitly set architecture
         timeout_seconds=60
     )
 

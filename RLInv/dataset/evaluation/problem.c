@@ -1,38 +1,47 @@
-#include <assert.h>
-void reach_error(void) { assert(0); }
+/*
+Printing consecutive cubes, by Cohen
+http://www.cs.upc.edu/~erodri/webpage/polynomial_invariants/cohencu.htm
+*/
 
+extern void abort(void);
+extern void __assert_fail(const char *, const char *, unsigned int,
+                          const char *) __attribute__((__nothrow__, __leaf__))
+__attribute__((__noreturn__));
+void reach_error() { __assert_fail("0", "cohencu.c", 8, "reach_error"); }
 extern int __VERIFIER_nondet_int(void);
-extern _Bool __VERIFIER_nondet_bool(void);
-
-void __VERIFIER_assert(int cond) {
+extern void abort(void);
+void assume_abort_if_not(int cond) {
     if (!cond) {
-        reach_error();
+        abort();
     }
 }
+void __VERIFIER_assert(int cond) {
+    if (!(cond)) {
+    ERROR : { reach_error(); }
+    }
+    return;
+}
 
-/* 24.cfg:
-names=i k n
-beforeloop=
-beforeloopinit=
-precondition=i==0 && k==n && n>=0
-loopcondition=i<n
-loop=k--; i+=2;
-postcondition=2*k>=n-1
-afterloop=
-learners= conj
-*/
 int main() {
-    int i = __VERIFIER_nondet_int();
-    int k = __VERIFIER_nondet_int();
-    int n = __VERIFIER_nondet_int();
+    int a, n, x, y, z;
+    a = __VERIFIER_nondet_int();
+    n = 0;
+    x = 0;
+    y = 1;
+    z = 6;
 
-    if (!(i == 0 && k == n && n >= 0)) {
-        return 0;
+    while (1) {
+        if (!(n <= a)) {
+            break;
+        }
+
+        n = n + 1;
+        x = x + y;
+        y = y + z;
+        z = z + 6;
     }
-    while (i < n) {
-        k--;
-        i += 2;
-    }
-    __VERIFIER_assert(2 * k >= n - 1);
+
+    __VERIFIER_assert(6 * a * x - x * z + 12 * x == 0);
+
     return 0;
 }
