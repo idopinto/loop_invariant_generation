@@ -30,7 +30,7 @@ int main() {
     y = 1;
     z = 6;
 
-    while (1) {
+    while (1) { 
         if (!(n <= a)) {
             break;
         }

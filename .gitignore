@@ -9,3 +9,6 @@ __pycache__/
 .pytest_cache/
 Ultimate.log
 *.errorpath
+.idea/
+.vscode
+example_reports/
