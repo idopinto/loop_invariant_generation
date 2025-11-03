@@ -63,7 +63,7 @@ def run_uautomizer(
     c_file_path: str,
     property_file_path: str,
     reports_dir: Path,
-    arch: str = '64bit',
+    arch: str = '32bit',
     timeout_seconds: float = 300.0,    
 ) -> VerifierCallReport:
     """
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     # --- IMPORTANT: UPDATE THESE PATHS ---
     # This should be the path to the script in your UAutomizer directory.
     UAUTOMIZER_EXECUTABLE_PATH = '/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py'
-    C_FILE_PATH = 'dataset/evaluation/problem.c'
+    C_FILE_PATH = 'dataset/evaluation/hard/c/interleave_bits_1.c'
     # This is the property file, likely located in the 'config' subdirectory.
     SPEC_FILE_PATH = 'dataset/properties/unreach-call.prp' # <-- UPDATE IF NEEDED
 
@@ -192,7 +192,7 @@ if __name__ == "__main__":
         property_file_path=SPEC_FILE_PATH,
         reports_dir=reports_dir,
         arch="32bit", # Explicitly set architecture
-        timeout_seconds=60
+        timeout_seconds=600
     )
 
     print("\n--- Verification Complete ---")

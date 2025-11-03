@@ -12,10 +12,11 @@ from src.utils.predicate import Predicate
 from src.eval.decision_procedure_report import DecisionProcedureReport
 from src.utils.validate import syntactic_validation
 from src.utils.equivalence import check_semantic_equivalence
-# UAUTOMIZER_EXECUTABLE_PATH = '/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py'
+
 class DecisionProcedure:
-    def __init__(self, program: Program, target_property_file_path: Path, code_dir: Path, uautomizer_executable_path: Path, timeout_seconds: float = 600.0):
+    def __init__(self, program: Program, target_property_file_path: Path, code_dir: Path, root_dir: Path, timeout_seconds: float = 600.0):
         self.program = program
+        self.root_dir = root_dir
         self.target_property_file_path = target_property_file_path # "unreach-call.prp"
         # Get the target assert from the program's assertions
         if self.program.assertions:
@@ -31,7 +32,7 @@ class DecisionProcedure:
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         # print(f"Reports directory created: {self.reports_dir}")
         self.timeout_seconds = max(0.1, float(timeout_seconds))
-        self.uautomizer_executable_path = uautomizer_executable_path
+        self.uautomizer_executable_path = root_dir / "tools" / "uautomizer" / "Ultimate.py"
     
     def run_verifier(self, program_str: str, property_file_path: Path, timeout_seconds: float, kind: str):
         c_file_path = self.code_dir / f"code_for_{kind}.c"
@@ -170,15 +171,15 @@ class DecisionProcedure:
     def run(self, candidate_invariant: Predicate, model_gen_time: float) -> DecisionProcedureReport:
         final_report = DecisionProcedureReport(model_generation_time=model_gen_time)
         is_valid = syntactic_validation(candidate_invariant.content)
-        is_logicaly_equivalent = check_semantic_equivalence(candidate_invariant.content, self.target_assert.content)
+        # is_logicaly_equivalent = check_semantic_equivalence(candidate_invariant.content, self.target_assert.content)
         print(f"The candidate invariant is valid: {is_valid}")
-        print(f"The candidate invariant is logically equivalent to the target assert: {is_logicaly_equivalent}")
-        if is_valid and not is_logicaly_equivalent:
+        # print(f"The candidate invariant is logically equivalent to the target assert: {is_logicaly_equivalent}")
+        if is_valid: # and not is_logicaly_equivalent:
            final_report = self.decide(candidate_invariant)
            final_report.total_time_taken = final_report.verification_time_taken + model_gen_time
         # save the final report to a json file
         report_file_path = self.reports_dir / "decision_report.json"
         final_report.save_json(report_file_path)
-        print(f"Decision report saved to:\n\t {report_file_path.relative_to(self.code_dir.parent.parent)}")
+        print(f"Decision report saved to:\n\t {report_file_path.relative_to(self.root_dir)}")
         return final_report
     

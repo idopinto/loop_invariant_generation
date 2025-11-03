@@ -58,7 +58,7 @@ class Model:
         locations = [f"  Line {labeled_points[ln]}: Line {ln} ({', '.join([a.name for a in assertion_points[ln]])})" 
                      for ln in sorted_lines]
         available_labels = ', '.join([labeled_points[ln] for ln in sorted_lines])
-        user_msg = f"""Given the following C program, produce a non-trivial loop invariant that implies final assertion and will be strong enough to accelerate verification by a Formal Verifier (UAutomizer).
+        user_msg = f"""Given the following C program, produce a non-trivial loop invariant that implies target property and will be strong enough to accelerate verification by a Formal Verifier (UAutomizer).
 ```c
 {formatted_program}
 ```
@@ -72,7 +72,7 @@ assert(<predicate>); // Line <label>
 Where:
 - <predicate> is a valid boolean C expression (use && for AND, || for OR)
 - <label> is one of the available location labels ({available_labels})
-- DO NOT repeat the target assert in the invariant you produce not even as a partial expression. suggest only new loop invariants that imply it.
+- 
 - Prefer equality over inequality when possible
 - Don't include explanations, just the assert statement
 

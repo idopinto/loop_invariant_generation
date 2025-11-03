@@ -7,7 +7,7 @@ import subprocess
 import os
 from os.path import join, basename, abspath
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional 
 import json
 
 
@@ -99,7 +99,7 @@ def red(text : str) -> str:
 def blue(text : str) -> str:
    return color.BLUE + text + color.END
 
-def load_dataset(dataset_path: Path, property_kind: str = "unreach", limit: int = None) -> List[Task]:
+def load_dataset(dataset_path: Path, property_kind: str = "unreach", limit: int = None, prefix: Optional[str] = None, suffix: Optional[str] = None) -> List[Task]:
     """Load dataset from YAML files."""
     from src.utils.task import Task  # Import here to avoid circular import
     tasks = []
@@ -108,6 +108,10 @@ def load_dataset(dataset_path: Path, property_kind: str = "unreach", limit: int 
         # print(yml_file)s
         if limit is not None and len(tasks) >= limit:
             break
+        if prefix is not None and not yml_file.stem.startswith(prefix):
+            continue
+        if suffix is not None and not yml_file.stem.endswith(suffix):
+            continue
         task = Task(yml_file_path=yml_file, property_kind=property_kind)
         tasks.append(task)
     return tasks

@@ -24,7 +24,7 @@ class InvBenchEvaluatorConfig:
     model: Model
     baseline_results: Optional[List[Dict]] = None
     default_timeout_seconds: int = 600
-    uautomizer_executable_path: Path = Path('/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py')
+    root_dir: Path = Path('/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv')
     property_kind: str = "unreach"
     
 class InvBenchEvaluator:
@@ -63,7 +63,7 @@ class InvBenchEvaluator:
                 program, 
                 target_property_path, 
                 code_dir, 
-                self.config.uautomizer_executable_path,
+                root_dir=self.config.root_dir,
                 timeout_seconds=timeout_seconds
             )
             
