@@ -1,25 +1,24 @@
+"""UAutomizer verifier interface for running verification and parsing results."""
+import json
+import os
 import subprocess
 import time
-import os
-import pprint
-import json
+from dataclasses import dataclass
 from enum import Enum
-from dataclasses import dataclass, asdict
 from pathlib import Path
+from typing import Optional, Union
+
+
 class Decision(Enum):
+    """Verification result decision."""
     Verified = 1
     Falsified = 2
     Unknown = 3
-    # Timeout = 4
-    # Error = 5
-    # TRUE = "TRUE"
-    # FALSE = "FALSE"
-    # UNKNOWN = "UNKNOWN"
-    # TIMEOUT = "TIMEOUT"
-    # ERROR = "ERROR"
+
 
 @dataclass
 class VerifierCallReport:
+    """Report containing verification results and metadata."""
     decision: Decision = Decision.Unknown
     time_taken: float = 0.0
     timeout: bool = False
@@ -28,9 +27,9 @@ class VerifierCallReport:
     err_file_path: str = ""
     
     def to_dict(self) -> dict:
-        """Convert the report to a dictionary for JSON serialization."""
+        """Convert report to dictionary for JSON serialization."""
         return {
-            'decision': self.decision.name,  # Convert enum to string
+            'decision': self.decision.name,
             'time_taken': self.time_taken,
             'timeout': self.timeout,
             'error': self.error,
@@ -39,161 +38,184 @@ class VerifierCallReport:
         }
     
     def save_json(self, file_path: Path) -> None:
-        """Save the report as a JSON file."""
+        """Save report as JSON file."""
         with open(file_path, 'w') as f:
             json.dump(self.to_dict(), f, indent=2)
     
     @classmethod
     def from_json(cls, file_path: Path) -> 'VerifierCallReport':
-        """Load a report from a JSON file."""
+        """Load report from JSON file."""
         with open(file_path, 'r') as f:
             data = json.load(f)
         return cls(
-            decision=Decision[data['decision']],  # Convert string back to enum
+            decision=Decision[data['decision']],
             time_taken=data['time_taken'],
             timeout=data['timeout'],
             error=data['error'],
             log_file_path=data['log_file_path'],
             err_file_path=data['err_file_path']
         )
+
+
+def _parse_result(output: str) -> Decision:
+    """Parse verification result from UAutomizer output."""
+    if "Result:" not in output:
+        return Decision.Unknown
     
-    
+    if "Result:\nTRUE" in output or "Result: TRUE" in output:
+        return Decision.Verified
+    elif "Result:\nFALSE" in output or "Result: FALSE" in output:
+        return Decision.Falsified
+    elif "Result:\nUNKNOWN" in output or "Result: UNKNOWN" in output:
+        return Decision.Unknown
+    return Decision.Unknown
+
+
+def _write_file(file_path: Path, content: str) -> None:
+    """Helper to write content to file."""
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(file_path, 'w') as f:
+        f.write(content)
+
+
+def _get_uautomizer_path(root_dir: Optional[Path] = None) -> Path:
+    """Get default UAutomizer executable path."""
+    if root_dir:
+        return root_dir / "tools" / "uautomizer" / "Ultimate.py"
+    return Path('/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py')
+
+
 def run_uautomizer(
-    uautomizer_path: str,
-    c_file_path: str,
-    property_file_path: str,
-    reports_dir: Path,
+    c_file_path: Union[Path, str],
+    property_file_path: Union[Path, str],
+    reports_dir: Union[Path, str],
     arch: str = '32bit',
-    timeout_seconds: float = 300.0,    
+    timeout_seconds: float = 600.0,
+    uautomizer_path: Optional[Union[Path, str]] = None,
 ) -> VerifierCallReport:
     """
-    Runs the UAutomizer verifier on a given C file and measures performance.
-
+    Run UAutomizer verifier on a C file.
+    
     Args:
-        uautomizer_path: Path to the UAutomizer executable (e.g., './Ultimate.py').
-        c_file_path: Path to the C file to be verified.
-        property_file_path: Path to the property specification file.
+        c_file_path: Path to the C file to verify.
+        property_file_path: Path to the property specification file (.prp).
         reports_dir: Directory where log files will be saved.
-        arch: Architecture of the target system (default: '64bit').
-        timeout_seconds: Maximum time in seconds before timeout.
-
+        arch: Architecture ('32bit' or '64bit').
+        timeout_seconds: Maximum execution time in seconds.
+        uautomizer_path: Path to UAutomizer executable. If None, uses default.
+    
     Returns:
-        VerifierCallReport containing the verification results and log file paths.
+        VerifierCallReport with verification results and metadata.
     """
-    # --- Create reports directory ---
+    # Convert all paths to Path objects
+    uautomizer_path = Path(uautomizer_path) if uautomizer_path else _get_uautomizer_path()
+    c_file_path = Path(c_file_path)
+    property_file_path = Path(property_file_path)
+    reports_dir = Path(reports_dir)
     reports_dir.mkdir(parents=True, exist_ok=True)
     
-    # Generate simple filenames without timestamps
-    c_file_name = Path(c_file_path).stem
-    log_file_path = reports_dir / f"{c_file_name}.log"
-    err_file_path = reports_dir / f"{c_file_name}.err"
+    log_file_path = reports_dir / f"{c_file_path.stem}.log"
+    err_file_path = reports_dir / f"{c_file_path.stem}.err"
     
-    # --- Input Validation ---
+    # Validate required files exist
     for path in [uautomizer_path, c_file_path, property_file_path]:
-        if not os.path.exists(path):
-            # Save error to err file
-            with open(err_file_path, 'w') as f:
-                f.write(f"Required file not found at: {path}")
-            report = VerifierCallReport(
+        if not path.exists():
+            _write_file(err_file_path, f"Required file not found: {path}")
+            return VerifierCallReport(
                 decision=Decision.Unknown,
                 time_taken=0.0,
-                timeout=False,
                 error=True,
                 log_file_path=str(log_file_path),
                 err_file_path=str(err_file_path)
             )
-            return report
-
-    # --- Command Construction ---
-    # Final command structure based on the --help output.
+    
+    # Build command
     command = [
-        uautomizer_path,
-        '--spec',
-        str(property_file_path),
-        '--architecture',
-        arch,
-        '--file',
-        str(c_file_path),
+        'python3',
+        str(uautomizer_path),
+        '--spec', str(property_file_path),
+        '--architecture', arch,
+        '--file', str(c_file_path),
         '--full-output'
     ]
+    
+    # Setup environment with uautomizer directory in PATH for SMT solvers
+    uautomizer_dir = uautomizer_path.parent
+    env = os.environ.copy()
+    env['PATH'] = str(uautomizer_dir) + os.pathsep + env.get('PATH', '')
+    
     report = VerifierCallReport(
         log_file_path=str(log_file_path),
         err_file_path=str(err_file_path)
     )
-
+    
     try:
-        # --- Execution and Timing ---
         start_time = time.perf_counter()
         completed_process = subprocess.run(
             command,
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
-            check=False
+            check=False,
+            env=env
         )
-        end_time = time.perf_counter()
-
-        report.time_taken = end_time - start_time
+        report.time_taken = time.perf_counter() - start_time
         
-        # Save stdout and stderr to files
-        with open(log_file_path, 'w') as f:
-            f.write(completed_process.stdout)
-        with open(err_file_path, 'w') as f:
-            f.write(completed_process.stderr)
-
-        # --- Result Parsing ---
-        if "Result:" in completed_process.stdout:
-            if "Result:\nTRUE" in completed_process.stdout or "Result: TRUE" in completed_process.stdout:
-                report.decision = Decision.Verified
-            elif "Result:\nFALSE" in completed_process.stdout or "Result: FALSE" in completed_process.stdout:
-                report.decision = Decision.Falsified
-            elif "Result:\nUNKNOWN" in completed_process.stdout or "Result: UNKNOWN" in completed_process.stdout:
-                report.decision = Decision.Unknown
-            else:
-                report.decision = Decision.Unknown
-        else:
-             report.error = True
-
+        _write_file(log_file_path, completed_process.stdout)
+        _write_file(err_file_path, completed_process.stderr)
+        
+        report.decision = _parse_result(completed_process.stdout)
+        if report.decision == Decision.Unknown and "Result:" not in completed_process.stdout:
+            report.error = True
+            
     except subprocess.TimeoutExpired as e:
         report.timeout = True
         report.time_taken = timeout_seconds
-        # Save timeout output to files (handle bytes/str)
-        with open(log_file_path, 'w') as f:
-            f.write(e.stdout.decode('utf-8', errors='ignore') if isinstance(e.stdout, bytes) else (e.stdout or ""))
-        with open(err_file_path, 'w') as f:
-            f.write(e.stderr.decode('utf-8', errors='ignore') if isinstance(e.stderr, bytes) else (e.stderr or ""))
+        stdout_content = e.stdout.decode('utf-8', errors='ignore') if isinstance(e.stdout, bytes) else (e.stdout or "")
+        stderr_content = e.stderr.decode('utf-8', errors='ignore') if isinstance(e.stderr, bytes) else (e.stderr or "")
+        _write_file(log_file_path, stdout_content)
+        _write_file(err_file_path, stderr_content)
+        
     except Exception as e:
         report.error = True
-        # Save exception to err file
-        with open(err_file_path, 'w') as f:
-            f.write(str(e))
-
+        _write_file(err_file_path, str(e))
+    
     return report
 
-# --- Example Usage ---
+
 if __name__ == "__main__":
-    # --- IMPORTANT: UPDATE THESE PATHS ---
-    # This should be the path to the script in your UAutomizer directory.
-    UAUTOMIZER_EXECUTABLE_PATH = '/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py'
-    C_FILE_PATH = 'dataset/evaluation/hard/c/interleave_bits_1.c'
-    # This is the property file, likely located in the 'config' subdirectory.
-    SPEC_FILE_PATH = 'dataset/properties/unreach-call.prp' # <-- UPDATE IF NEEDED
-
-    print(f"--- Running UAutomizer on {C_FILE_PATH} ---")
-    with open(C_FILE_PATH, 'r') as file:
-        program = file.read()
-    print(f"Program: {program}")
-    # Create a reports directory for this example
-    reports_dir = Path("example_reports")
-    reports_dir.mkdir(parents=True, exist_ok=True)
-    verification_result = run_uautomizer(
-        uautomizer_path=UAUTOMIZER_EXECUTABLE_PATH,
-        c_file_path=C_FILE_PATH,
-        property_file_path=SPEC_FILE_PATH,
+    import argparse
+    import pprint
+    
+    parser = argparse.ArgumentParser(description="Run UAutomizer verifier")
+    parser.add_argument("--root_dir", type=Path, 
+                       default=Path('/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv'))
+    parser.add_argument("--data_split", type=str, default='easy')
+    parser.add_argument("--c_file_path", type=str, default='benchmark24_conjunctive_1.c')
+    parser.add_argument("--spec_file_path", type=str, default='unreach-call.prp')
+    parser.add_argument("--arch", type=str, default='32bit', choices=['32bit', '64bit'])
+    parser.add_argument("--timeout_seconds", type=int, default=600)
+    
+    args = parser.parse_args()
+    
+    c_file = args.root_dir / 'dataset' / 'evaluation' / args.data_split / 'c' / args.c_file_path
+    spec_file = args.root_dir / 'dataset' / 'properties' / args.spec_file_path
+    reports_dir = args.root_dir / "example_reports"
+    uautomizer_path = args.root_dir / "tools" / "uautomizer" / "Ultimate.py"
+    
+    print(f"Running UAutomizer on {c_file}")
+    print(f"  Property: {spec_file}")
+    print(f"  Architecture: {args.arch}")
+    print(f"  Timeout: {args.timeout_seconds}s")
+    
+    result = run_uautomizer(
+        c_file_path=c_file,
+        property_file_path=spec_file,
         reports_dir=reports_dir,
-        arch="32bit", # Explicitly set architecture
-        timeout_seconds=600
+        arch=args.arch,
+        timeout_seconds=args.timeout_seconds,
+        uautomizer_path=uautomizer_path
     )
-
+    
     print("\n--- Verification Complete ---")
-    pprint.pprint(verification_result)
+    pprint.pprint(result.to_dict())
