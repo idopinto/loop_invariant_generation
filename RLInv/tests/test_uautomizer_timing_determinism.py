@@ -333,7 +333,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--c_file",
         type=Path,
-        default=project_root / "dataset" / "evaluation" / "easy" / "c" / "benchmark24_conjunctive_1.c",
+        default=project_root / "dataset" / "evaluation" / "easy" / "c" / "sll-01-1_9.c",
         help="Path to C file to test"
     )
     parser.add_argument(
@@ -370,7 +370,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--timeout",
         type=float,
-        default=300.0,
+        default=600.0,
         help="Timeout per run in seconds"
     )
     parser.add_argument(
