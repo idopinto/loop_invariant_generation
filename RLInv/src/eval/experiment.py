@@ -42,7 +42,7 @@ class EvalExperiment:
     def setup(self):
         self.experiments_dir = self.root_dir / "experiments" / f"exp_{self.config.exp_id}"
         self.experiments_dir.mkdir(parents=True, exist_ok=True)
-        self.baseline_file = self.root_dir / "dataset" / "evaluation" / self.config.data_split / "baseline_results.json"
+        self.baseline_file = self.root_dir / "dataset" / "evaluation" / self.config.data_split / "baseline_timing.json"
         self.baseline_results = self.get_baseline_results()
         self.tasks = load_dataset(dataset_path=self.root_dir / "dataset" / "evaluation" / self.config.data_split / "yml", 
                                   property_kind=self.config.property_kind, 
@@ -120,7 +120,7 @@ class EvalExperiment:
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate a list of models on a InvBench dataset")
     parser.add_argument("--exp_id", type=str, required=True, help="Experiment ID")
-    parser.add_argument("--data_split", type=str, required=True, choices=["easy", "hard"], help="Data split")
+    parser.add_argument("--data_split", type=str, required=True, choices=["easy", "hard", "single"], help="Data split")
     parser.add_argument("--models", type=str, required=True, help="Models (space-separated list)")
     parser.add_argument("--limit", type=int, default=-1, help="Limit number of tasks to evaluate (default: -1 for all)")
     parser.add_argument("--include_model_generation_time", action="store_true", help="Include model generation time in speedup calculations (default: False, uses verification time only)")
@@ -134,6 +134,8 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     models = args.models.split(" ")
+    args.data_split = "single"
+    args.include_model_generation_time = True
     config = Config(
         exp_id=args.exp_id,
         root_dir=Path(args.root_dir),
@@ -156,6 +158,8 @@ if __name__ == "__main__":
     print(f"  include_model_generation_time: {config.include_model_generation_time}")
     print(f"  default_timeout_seconds: {config.default_timeout_seconds}")
     print(f"  property_kind: {config.property_kind}")
+    print(f"  prefix: {config.prefix}")
+    print(f"  suffix: {config.suffix}")
     print("\n" + "="*80)
     experiment = EvalExperiment(config)
     experiment.run()

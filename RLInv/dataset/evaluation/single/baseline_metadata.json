@@ -1,0 +1,22 @@
+{
+  "uautomizer_versions": {
+    "ultversion": "Version is 0.3.0",
+    "version": "d790fecc"
+  },
+  "system_info": {
+    "architecture": "x86_64",
+    "cpu": "AMD EPYC 9334 32-Core Processor",
+    "python_version": "3.13.5"
+  },
+  "configuration": {
+    "per_instance_timeout_seconds": 600,
+    "uautomizer_java_heap_max_gb": 15,
+    "slurm_cpus_per_task": null,
+    "slurm_memory_gb": null
+  },
+  "total_problems": 1,
+  "total_time": 7.17972207069397,
+  "timestamp": "2025-11-05 14:19:43",
+  "evaluation_folder": "/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/dataset/evaluation/single",
+  "timeout_seconds": 600
+}

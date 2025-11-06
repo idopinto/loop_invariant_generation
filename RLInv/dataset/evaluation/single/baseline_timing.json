@@ -1,0 +1,10 @@
+[
+  {
+    "base_filename": "benchmark24_conjunctive_1",
+    "decision": "Verified",
+    "baseline_timing": 7.152433080002083,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  }
+]

@@ -1,0 +1,2 @@
+Easy: 163 problems (timing <= 30s)
+Hard: 58 problems (timing > 30s)
