@@ -11,7 +11,7 @@ Calculates the four metrics from Table 2 (InvBench-Easy):
 
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Union
 import pandas as pd
 
 class InvBenchMetrics:
@@ -61,89 +61,102 @@ class InvBenchMetrics:
         self.model_metrics.to_csv(output_file, index=False)
 
 
-def calculate_metrics(model_full_results: dict, baseline_results: List[Dict], include_model_generation_time: bool = False) -> Dict[str, float]:
+def calculate_metrics(model_results: Union[Dict, List[Dict]], baseline_timing: List[Dict], include_model_generation_time: bool = False) -> pd.DataFrame:
     """
     Calculate InvBench metrics for a model.
     
     Args:
-        model_full_results: Full model evaluation results (DecisionProcedureReport format)
-        baseline_results: List of baseline timing results
+        model_results: Either a dict with "results" key containing list of task results,
+                      or a list of task result dicts directly
+        baseline_timing: List of baseline timing results
         include_model_generation_time: If True, use total_time_taken (includes model gen time).
                                        If False (default), use verification_time_taken (only verification).
     
     Returns:
-        Dictionary with the four metrics
+        DataFrame with the four metrics
     """
-    if not model_full_results:
+    if not model_results:
         return pd.DataFrame(columns=["Model", "% Correct Invariant", "% Speedup", "Speedup>1", "Speedup_all"])
-    model_name = model_full_results.get("model_path_or_name", "")
-    model_results = model_full_results.get("results", [])
     
-    # Create baseline lookups
-    baseline_timing = {r["base_filename"]: r["baseline_timing"] for r in baseline_results}
-    expected_verdict = {r["base_filename"]: str(r.get("expected_answer", "unknown")).lower() for r in baseline_results}
-    # print(f"Baseline timing: {baseline_timing}")
-    correct_count = 0
+    # Initialize accumulators
+    all_speedups = []
     speedup_count = 0
     speedups_gt1 = []
-    all_speedups = []
+    correct_count = 0
     
-    for result in model_results:
-        # print(f"--------------------------------")
-        # Check if invariant is correct (invariant_correctness_report is Verified)
-        report = result.get("report", {}) 
-        invariant_correctness_report = report.get("invariant_correctness_report", {})
-        if invariant_correctness_report:
-            correctness_report_decision = invariant_correctness_report.get("decision")
-            if correctness_report_decision == "Verified":
-                correct_count += 1
-        else:
-            correctness_report_decision = "Unknown"
-        # Calculate speedup
-        # task_name is already the YML file stem (matching baseline's base_filename)
-        base_filename = result.get("task_name", "")
-        # print(f"Base filename: {base_filename}")
-        baseline_time = baseline_timing.get(base_filename, 0.0)
-        # Use verification_time_taken by default (without model gen time), or total_time_taken if flag is set
-        if include_model_generation_time:
-            model_time = report.get("total_time_taken", 0.0)
-        else:
-            # Default: use verification time only (without model generation time)
-            model_time = report.get("verification_time_taken", report.get("total_time_taken", 0.0))
-        final_decision_raw = report.get("final_decision", "Unknown")
-        # Map final_decision to boolean (true/false) for comparison with expected_verdict
-        final_decision_bool = map_decision_to_boolean(final_decision_raw)
-        expected = expected_verdict.get(base_filename, "unknown")
-        # print(f"Baseline time: {baseline_time}")
-        # print(f"Model time: {model_time}")
-        # print(f"Final decision (raw): {final_decision_raw}, mapped to: {final_decision_bool}, expected: {expected}")
-        # If baseline_time is 0 (no baseline timing available) or model_time is <= 0 (possibly failed/invalid model run),
-        # set speedup = 1.0 as a neutral baseline, because a speedup ratio can't be computed in these cases.
-        # This avoids division by zero and treats "no data" as "no improvement" for reporting purposes.
-        # If decision is Unknown or does not match expected verdict, count as no-speedup
-        invalid_for_speedup = (final_decision_bool == "unknown") or (expected != "unknown" and final_decision_bool != expected)
-
-        if baseline_time == 0.0 or model_time <= 0 or invalid_for_speedup:
-            speedup = 1.0
-        else:
-            speedup = baseline_time / model_time
-        all_speedups.append(speedup)
-        # print(f"Speedup: {speedup}")
-        if speedup > 1.0:
-            speedup_count += 1
-            speedups_gt1.append(speedup)
-    # print(f"--------------------------------")
-    total_count = len(model_results)
-    # print(f"Total count: {total_count}")
-    # print(f"Correct count: {correct_count}")
-    # print(f"Speedup count: {speedup_count}")
-    # print(f"Speedups gt1: {speedups_gt1}")
-    # print(f"All speedups: {all_speedups}")
-    # return dataframe insted
+    # Create baseline lookups (preserve original list for expected_verdict)
+    baseline_timing_dict = {r["file"]: r["time"] for r in baseline_timing}
+    expected_verdict = {r["file"]: str(r.get("result", "unknown")).lower() for r in baseline_timing}
+    
+    # Handle different input formats: dict with "results" key or list of results
+    if isinstance(model_results, dict):
+        # If it's a dict, extract model name and results list
+        model_name = model_results.get("model_path_or_name", "unknown_model")
+        task_results = model_results.get("results", [])
+    elif isinstance(model_results, list):
+        # If it's a list, use it directly as task results
+        task_results = model_results
+        # Try to get model name from first result if available
+        model_name = "unknown_model"
+        if task_results and isinstance(task_results[0], dict):
+            model_name = task_results[0].get("model_path_or_name", "unknown_model")
+    else:
+        # Invalid input type
+        return pd.DataFrame(columns=["Model", "% Correct Invariant", "% Speedup", "Speedup>1", "Speedup_all"])
+    
+    # Iterate over all task results
+    for result in task_results:
+        # Extract task information
+        if isinstance(result, dict):
+            task_name = result.get("task_name", "")
+            report = result.get("report", {})
+            
+            # Check invariant correctness
+            invariant_report = report.get("invariant_correctness_report", {})
+            if isinstance(invariant_report, dict):
+                correctness_decision = invariant_report.get("decision", "")
+                if isinstance(correctness_decision, dict):
+                    correctness_decision = correctness_decision.get("name", "")
+                if str(correctness_decision).lower() == "verified":
+                    correct_count += 1
+            
+            # Get baseline time for this task
+            baseline_time = baseline_timing_dict.get(task_name, 0.0)
+            
+            # Get model time (verification or total)
+            if include_model_generation_time:
+                model_time = report.get("total_time_taken", 0.0)
+            else:
+                model_time = report.get("verification_time_taken", report.get("total_time_taken", 0.0))
+            
+            # Get final decision
+            final_decision_raw = report.get("final_decision", "Unknown")
+            if isinstance(final_decision_raw, dict):
+                final_decision_raw = final_decision_raw.get("name", "Unknown")
+            
+            # Map final_decision to boolean (true/false) for comparison with expected_verdict
+            final_decision_bool = map_decision_to_boolean(str(final_decision_raw))
+            expected = expected_verdict.get(task_name, "unknown")
+            invalid_for_speedup = (final_decision_bool == "unknown") or (expected != "unknown" and final_decision_bool != expected)
+            
+            # Calculate speedup
+            if baseline_time == 0.0 or model_time <= 0 or invalid_for_speedup:
+                speedup = 1.0
+            else:
+                speedup = baseline_time / model_time
+            
+            all_speedups.append(speedup)
+            if speedup > 1.0:
+                speedup_count += 1
+                speedups_gt1.append(speedup)
+    
+    total_count = len(task_results) if task_results else 1
+    
+    # Create DataFrame with metrics
     df = pd.DataFrame({
         "Model": [model_name],
-        "% Correct Invariant": [correct_count / total_count],
-        "% Speedup": [speedup_count / total_count],
+        "% Correct Invariant": [correct_count / total_count if total_count > 0 else 0.0],
+        "% Speedup": [speedup_count / total_count if total_count > 0 else 0.0],
         "Speedup>1": [sum(speedups_gt1) / len(speedups_gt1) if speedups_gt1 else 1.0],
         "Speedup_all": [sum(all_speedups) / len(all_speedups) if all_speedups else 1.0]
     })

@@ -11,6 +11,19 @@ from typing import List, Dict, Optional
 import json
 
 
+def _sanitize(name: str) -> str:
+    return name.replace("/", "_").replace(" ", "_")
+
+def save_as_json(content: dict, save_path: Path) -> None:
+    with open(save_path, 'w') as f:
+        json.dump(content, f, indent=2)
+    print(f"\nResults saved to:\n\t {save_path}")
+    
+def load_json(file_path: Path) -> List[Dict]:
+    """Load results from JSON file."""
+    with open(file_path, 'r') as f:
+        return json.load(f)
+    
 def load_yaml_file(file_path):
     try:
         with open(file_path, "r") as file:
@@ -116,14 +129,14 @@ def load_dataset(dataset_path: Path, property_kind: str = "unreach", limit: int 
         tasks.append(task)
     return tasks
 
-def load_baseline_results(baseline_file: Path) -> List[Dict]:
-    """Load baseline results from JSON file. If the file does not exist, return an empty list."""
-    if not baseline_file.exists():
-        print(f"Warning: Baseline file not found at {baseline_file}, using default timeouts")
-        return []
-    try:
-        with open(baseline_file, 'r') as f:
-            return json.load(f)
-    except Exception as e:
-        print(f"Warning: Failed to load baseline results from {baseline_file}: {e}, using default timeouts")
-        return []
+# def load_baseline_results(baseline_file: Path) -> List[Dict]:
+#     """Load baseline results from JSON file. If the file does not exist, return an empty list."""
+#     if not baseline_file.exists():
+#         print(f"Warning: Baseline file not found at {baseline_file}, using default timeouts")
+#         return []
+#     try:
+#         with open(baseline_file, 'r') as f:
+#             return json.load(f)
+#     except Exception as e:
+#         print(f"Warning: Failed to load baseline results from {baseline_file}: {e}, using default timeouts")
+#         return []

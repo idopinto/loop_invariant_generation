@@ -1,0 +1,1770 @@
+[
+  {
+    "base_filename": "freire2_unwindbound1_4",
+    "decision": "Verified",
+    "baseline_timing": 211.83266829900003,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "prod4br-ll_valuebound10_1",
+    "decision": "Verified",
+    "baseline_timing": 8.817178791000515,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard-u_unwindbound1_5",
+    "decision": "Verified",
+    "baseline_timing": 5.80976545700014,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo3-ll_unwindbound1_2",
+    "decision": "Verified",
+    "baseline_timing": 43.84803141900011,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dll-queue-1_4",
+    "decision": "Unknown",
+    "baseline_timing": 11.376339530000223,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "bresenham-ll_unwindbound10_2",
+    "decision": "Falsified",
+    "baseline_timing": 321.73511279800005,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "hard2_valuebound2_5",
+    "decision": "Verified",
+    "baseline_timing": 22.726661745000456,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound5_9",
+    "decision": "Verified",
+    "baseline_timing": 34.422476599999754,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_unwindbound10_3",
+    "decision": "Verified",
+    "baseline_timing": 12.186900582000817,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "fermat1-ll_unwindbound10_4",
+    "decision": "Falsified",
+    "baseline_timing": 168.26313173000017,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "bresenham-ll_valuebound50_1",
+    "decision": "Verified",
+    "baseline_timing": 8.143853829999898,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound2_4",
+    "decision": "Verified",
+    "baseline_timing": 6.728287578999698,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "freire2_unwindbound1_6",
+    "decision": "Falsified",
+    "baseline_timing": 93.42646877100015,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound20_8",
+    "decision": "Verified",
+    "baseline_timing": 11.285324043999935,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound20_3",
+    "decision": "Verified",
+    "baseline_timing": 7.148715169999377,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sll-queue-1_12",
+    "decision": "Unknown",
+    "baseline_timing": 21.802832035000392,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound20_9",
+    "decision": "Verified",
+    "baseline_timing": 24.738458998999704,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_unwindbound50_6",
+    "decision": "Verified",
+    "baseline_timing": 81.5571645530008,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_unwindbound5_4",
+    "decision": "Verified",
+    "baseline_timing": 7.409371259999716,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "fermat1-ll_2",
+    "decision": "Verified",
+    "baseline_timing": 7.774084583000331,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound20_10",
+    "decision": "Verified",
+    "baseline_timing": 6.617478803999802,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "lcm2_valuebound50_1",
+    "decision": "Verified",
+    "baseline_timing": 11.440118525999424,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "s42iff_1",
+    "decision": "Falsified",
+    "baseline_timing": 7.458475602000362,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "egcd3-ll_valuebound1_3",
+    "decision": "Verified",
+    "baseline_timing": 8.608191642000747,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound5_7",
+    "decision": "Falsified",
+    "baseline_timing": 8.081084717000522,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "sll-01-1_9",
+    "decision": "Unknown",
+    "baseline_timing": 18.236487569999554,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_valuebound1_5",
+    "decision": "Verified",
+    "baseline_timing": 14.361911749000683,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard2_valuebound2_6",
+    "decision": "Verified",
+    "baseline_timing": 9.43202262000068,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound100_8",
+    "decision": "Verified",
+    "baseline_timing": 10.911011219000102,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound2_2",
+    "decision": "Verified",
+    "baseline_timing": 20.229725062999933,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "soft_float_1-3a_cil_3",
+    "decision": "Verified",
+    "baseline_timing": 31.282758738000666,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps6-ll_3",
+    "decision": "Verified",
+    "baseline_timing": 9.17553037000016,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu_10",
+    "decision": "Verified",
+    "baseline_timing": 6.236980695999591,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sqmf_1",
+    "decision": "Falsified",
+    "baseline_timing": 6.066172361000099,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "sum_by_3_1",
+    "decision": "Verified",
+    "baseline_timing": 93.91452115299944,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sqrt1_5",
+    "decision": "Verified",
+    "baseline_timing": 7.065448399000161,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_valuebound20_6",
+    "decision": "Verified",
+    "baseline_timing": 7.480167734999668,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "functions_1-1_1",
+    "decision": "Verified",
+    "baseline_timing": 6.258164885000042,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "soft_float_4-3.c.cil_2",
+    "decision": "Falsified",
+    "baseline_timing": 18.449712244000693,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound5_4",
+    "decision": "Verified",
+    "baseline_timing": 6.756194487000357,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_unwindbound5_3",
+    "decision": "Verified",
+    "baseline_timing": 9.074196593000124,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_unwindbound50_5",
+    "decision": "Falsified",
+    "baseline_timing": 29.917971419999958,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "fermat1-ll_valuebound20_1",
+    "decision": "Verified",
+    "baseline_timing": 10.010725334999734,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_unwindbound50_4",
+    "decision": "Verified",
+    "baseline_timing": 7.192716194999775,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps4-ll_valuebound10_2",
+    "decision": "Verified",
+    "baseline_timing": 7.625252101000115,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "diamond_1-1_1",
+    "decision": "Verified",
+    "baseline_timing": 26.814819031000297,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_valuebound1_2",
+    "decision": "Verified",
+    "baseline_timing": 7.26514002499971,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound20_11",
+    "decision": "Verified",
+    "baseline_timing": 6.245287632000327,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound5_8",
+    "decision": "Verified",
+    "baseline_timing": 9.273252482000316,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "fermat2-ll_unwindbound2_2",
+    "decision": "Falsified",
+    "baseline_timing": 19.199038460000338,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound20_9",
+    "decision": "Verified",
+    "baseline_timing": 17.18234869400021,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound50_8",
+    "decision": "Verified",
+    "baseline_timing": 11.302721953999935,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sqrt1-ll_valuebound50_4",
+    "decision": "Verified",
+    "baseline_timing": 6.607852156999797,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard2_valuebound1_4",
+    "decision": "Verified",
+    "baseline_timing": 47.85191262900025,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "lcm1_unwindbound20_5",
+    "decision": "Falsified",
+    "baseline_timing": 28.102736359999653,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "benchmark46_disjunctive_1",
+    "decision": "Verified",
+    "baseline_timing": 6.407143796000128,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sll-queue-1_19",
+    "decision": "Verified",
+    "baseline_timing": 5.330228286999954,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard2_valuebound10_5",
+    "decision": "Verified",
+    "baseline_timing": 42.411148860999674,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo1-ll_unwindbound1_2",
+    "decision": "Verified",
+    "baseline_timing": 53.83187214899954,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard2_unwindbound1_1",
+    "decision": "Verified",
+    "baseline_timing": 8.412332287998652,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound20_7",
+    "decision": "Falsified",
+    "baseline_timing": 10.22549530300057,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "fermat1_3",
+    "decision": "Verified",
+    "baseline_timing": 31.35366636099934,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_unwindbound5_2",
+    "decision": "Verified",
+    "baseline_timing": 10.506294786999206,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo3-ll_valuebound2_1",
+    "decision": "Verified",
+    "baseline_timing": 8.375247341999057,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps4-ll_valuebound5_2",
+    "decision": "Verified",
+    "baseline_timing": 9.17076768699917,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo1-ll_valuebound2_1",
+    "decision": "Verified",
+    "baseline_timing": 7.49781312399864,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohendiv-ll_unwindbound100_1",
+    "decision": "Verified",
+    "baseline_timing": 7.21661031000076,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound10_10",
+    "decision": "Verified",
+    "baseline_timing": 6.402829902999656,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound20_5",
+    "decision": "Verified",
+    "baseline_timing": 6.939994844000466,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_unwindbound50_2",
+    "decision": "Verified",
+    "baseline_timing": 28.316612542999792,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "pcompf_1",
+    "decision": "Falsified",
+    "baseline_timing": 9.656839483999647,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "prod4br-ll_unwindbound1_1",
+    "decision": "Verified",
+    "baseline_timing": 7.690924212000027,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sqrt1-ll_unwindbound50_4",
+    "decision": "Verified",
+    "baseline_timing": 7.446641638998699,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound1_2",
+    "decision": "Verified",
+    "baseline_timing": 6.357528917998934,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps2-ll_unwindbound1_2",
+    "decision": "Verified",
+    "baseline_timing": 6.4078153610007575,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "rewnifrev2_1",
+    "decision": "Verified",
+    "baseline_timing": 174.0875910470004,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound2_8",
+    "decision": "Verified",
+    "baseline_timing": 17.58931076600129,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dll-rb-cnstr_1-2_4",
+    "decision": "Unknown",
+    "baseline_timing": 14.729256459999306,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard-u_valuebound1_6",
+    "decision": "Verified",
+    "baseline_timing": 18.058801522000067,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dll-simple-white-blue-2_2",
+    "decision": "Unknown",
+    "baseline_timing": 600,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo1-ll_unwindbound2_2",
+    "decision": "Verified",
+    "baseline_timing": 57.362593772000764,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound50_9",
+    "decision": "Verified",
+    "baseline_timing": 40.71551707299841,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "freire2_valuebound10_4",
+    "decision": "Verified",
+    "baseline_timing": 187.74648858900036,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "prodbin-ll_valuebound5_1",
+    "decision": "Verified",
+    "baseline_timing": 12.906004987000415,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sll-01-1_8",
+    "decision": "Unknown",
+    "baseline_timing": 11.684269473998938,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_valuebound5_7",
+    "decision": "Verified",
+    "baseline_timing": 28.226193983000485,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "prod4br-ll_valuebound2_2",
+    "decision": "Verified",
+    "baseline_timing": 20.68351990500014,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "prodbin-ll_unwindbound1_2",
+    "decision": "Verified",
+    "baseline_timing": 5.557171566000761,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "fermat1-ll_valuebound5_4",
+    "decision": "Verified",
+    "baseline_timing": 323.05773365999994,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sqrt1-ll_valuebound50_5",
+    "decision": "Verified",
+    "baseline_timing": 7.223538053000084,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound10_7",
+    "decision": "Verified",
+    "baseline_timing": 6.80077069500112,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound2_7",
+    "decision": "Verified",
+    "baseline_timing": 96.86250796599961,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dll-rb-cnstr_1-2_3",
+    "decision": "Unknown",
+    "baseline_timing": 14.517775570000595,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo3-ll_unwindbound5_2",
+    "decision": "Verified",
+    "baseline_timing": 462.8295560959996,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "interleave_bits_1",
+    "decision": "Verified",
+    "baseline_timing": 179.61442994800018,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "condmf_1",
+    "decision": "Falsified",
+    "baseline_timing": 6.584953576999396,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "cohencu_7",
+    "decision": "Verified",
+    "baseline_timing": 6.782658664998962,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "prod4br-ll_unwindbound5_2",
+    "decision": "Falsified",
+    "baseline_timing": 48.007368261998636,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "soft_float_1-3a_cil_1",
+    "decision": "Verified",
+    "baseline_timing": 10.405152254999848,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sum04-2_1",
+    "decision": "Verified",
+    "baseline_timing": 7.8451536190004845,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_valuebound2_1",
+    "decision": "Verified",
+    "baseline_timing": 11.591421052999067,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "soft_float_4-3a_cil_3",
+    "decision": "Verified",
+    "baseline_timing": 48.098554164000234,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_unwindbound10_3",
+    "decision": "Verified",
+    "baseline_timing": 13.622839046000081,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound20_8",
+    "decision": "Unknown",
+    "baseline_timing": 600,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_unwindbound10_1",
+    "decision": "Verified",
+    "baseline_timing": 17.984003131999998,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo3-ll_unwindbound2_2",
+    "decision": "Verified",
+    "baseline_timing": 50.147583540001506,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "soft_float_4-3_cil_3",
+    "decision": "Verified",
+    "baseline_timing": 39.102999372998966,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps6-ll_2",
+    "decision": "Verified",
+    "baseline_timing": 6.468248451999898,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo2-ll_unwindbound5_2",
+    "decision": "Verified",
+    "baseline_timing": 228.78037340300034,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_unwindbound50_3",
+    "decision": "Verified",
+    "baseline_timing": 28.130206866000663,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_valuebound1_5",
+    "decision": "Verified",
+    "baseline_timing": 11.618961262000084,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_unwindbound10_5",
+    "decision": "Falsified",
+    "baseline_timing": 65.33068137999908,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "ps4-ll_unwindbound20_3",
+    "decision": "Verified",
+    "baseline_timing": 8.425600867998583,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sll-01-2_9",
+    "decision": "Unknown",
+    "baseline_timing": 14.498334133999379,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "prod4br-ll_unwindbound5_1",
+    "decision": "Verified",
+    "baseline_timing": 6.953702830998736,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard2_4",
+    "decision": "Unknown",
+    "baseline_timing": 600,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "nested_delay_notd2_1",
+    "decision": "Falsified",
+    "baseline_timing": 25.291313640000226,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound5_2",
+    "decision": "Verified",
+    "baseline_timing": 6.755518451000171,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_unwindbound5_7",
+    "decision": "Verified",
+    "baseline_timing": 20.687512812999557,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sqrt1-ll_unwindbound50_5",
+    "decision": "Verified",
+    "baseline_timing": 6.900719317998664,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "rewnifrev_1",
+    "decision": "Verified",
+    "baseline_timing": 14.19204271200033,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohendiv-ll_valuebound50_6",
+    "decision": "Verified",
+    "baseline_timing": 20.909518111999205,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps4-ll_valuebound5_1",
+    "decision": "Verified",
+    "baseline_timing": 8.460698339998999,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_valuebound1_6",
+    "decision": "Verified",
+    "baseline_timing": 14.04121224499977,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_valuebound2_1",
+    "decision": "Verified",
+    "baseline_timing": 8.747180527001547,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps4-ll_valuebound20_2",
+    "decision": "Verified",
+    "baseline_timing": 8.85639834199901,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo2-ll_valuebound2_1",
+    "decision": "Verified",
+    "baseline_timing": 14.897870434000652,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps5-ll_3",
+    "decision": "Verified",
+    "baseline_timing": 10.130069607999758,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps6-ll_valuebound1_3",
+    "decision": "Verified",
+    "baseline_timing": 10.089374698998654,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohendiv-ll_unwindbound100_2",
+    "decision": "Verified",
+    "baseline_timing": 9.16149585399944,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2_3",
+    "decision": "Verified",
+    "baseline_timing": 25.099534314000266,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound2_3",
+    "decision": "Verified",
+    "baseline_timing": 368.39349126399975,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps4-ll_unwindbound10_3",
+    "decision": "Verified",
+    "baseline_timing": 9.560395289001463,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohendiv-ll_valuebound50_4",
+    "decision": "Verified",
+    "baseline_timing": 23.60236968800018,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps4-ll_2",
+    "decision": "Verified",
+    "baseline_timing": 8.804198163001274,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "freire2_unwindbound10_3",
+    "decision": "Falsified",
+    "baseline_timing": 29.65857760200015,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "geo2-ll2_1",
+    "decision": "Verified",
+    "baseline_timing": 8.746153981999669,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_valuebound2_5",
+    "decision": "Verified",
+    "baseline_timing": 41.40206509999916,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "mono-crafted_11_1",
+    "decision": "Verified",
+    "baseline_timing": 9.771236026999759,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound5_2",
+    "decision": "Verified",
+    "baseline_timing": 8.33972351599914,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_unwindbound5_6",
+    "decision": "Verified",
+    "baseline_timing": 19.779189771001256,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard-u_valuebound1_4",
+    "decision": "Verified",
+    "baseline_timing": 38.90405261200067,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound5_7",
+    "decision": "Verified",
+    "baseline_timing": 9.231877857000654,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps6-ll_unwindbound10_2",
+    "decision": "Verified",
+    "baseline_timing": 9.502090631000101,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_valuebound5_5",
+    "decision": "Verified",
+    "baseline_timing": 31.61161985199942,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_unwindbound10_5",
+    "decision": "Falsified",
+    "baseline_timing": 22.5280475189993,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound2_5",
+    "decision": "Verified",
+    "baseline_timing": 8.93033104099959,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "fermat1-ll_valuebound5_3",
+    "decision": "Verified",
+    "baseline_timing": 30.406067420999534,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "tree_del_rec_3",
+    "decision": "Falsified",
+    "baseline_timing": 12.316653973999564,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "prodbin-ll_valuebound10_1",
+    "decision": "Verified",
+    "baseline_timing": 65.13512574000015,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "bh2017-ex-add_2",
+    "decision": "Verified",
+    "baseline_timing": 9.021659490001184,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard-ll_valuebound2_4",
+    "decision": "Verified",
+    "baseline_timing": 16.30321090399957,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound5_9",
+    "decision": "Verified",
+    "baseline_timing": 23.810044501000448,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "soft_float_1-3a_cil_7",
+    "decision": "Verified",
+    "baseline_timing": 46.30589437599883,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "divbin2_valuebound1_2",
+    "decision": "Verified",
+    "baseline_timing": 15.291196682999725,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "mannadiv_unwindbound100_1",
+    "decision": "Verified",
+    "baseline_timing": 7.8256202610009495,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "brs2f_1",
+    "decision": "Falsified",
+    "baseline_timing": 10.114788229000624,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "hard-ll_valuebound1_6",
+    "decision": "Verified",
+    "baseline_timing": 9.772988018999968,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_unwindbound2_6",
+    "decision": "Verified",
+    "baseline_timing": 7.730339724999794,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "soft_float_1-3a_cil_6",
+    "decision": "Verified",
+    "baseline_timing": 37.25168713700077,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sll-queue-1_13",
+    "decision": "Unknown",
+    "baseline_timing": 25.729980604000957,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "freire2_unwindbound1_3",
+    "decision": "Falsified",
+    "baseline_timing": 37.23515246199895,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "ps4-ll_valuebound1_1",
+    "decision": "Verified",
+    "baseline_timing": 8.858784694999486,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard2_valuebound20_7",
+    "decision": "Verified",
+    "baseline_timing": 41.22667852199993,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "prodbin-ll_unwindbound2_3",
+    "decision": "Verified",
+    "baseline_timing": 6.100808436000079,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps5-ll_unwindbound1_3",
+    "decision": "Falsified",
+    "baseline_timing": 8.447071305001373,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "cohendiv-ll_unwindbound10_5",
+    "decision": "Verified",
+    "baseline_timing": 7.815831840000101,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "fermat2-ll_unwindbound20_1",
+    "decision": "Verified",
+    "baseline_timing": 9.68889865500023,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu_4",
+    "decision": "Verified",
+    "baseline_timing": 7.46547694200126,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sqrt1_2",
+    "decision": "Verified",
+    "baseline_timing": 9.41804588299965,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard-ll_valuebound2_3",
+    "decision": "Verified",
+    "baseline_timing": 8.200614536999637,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound5_1",
+    "decision": "Verified",
+    "baseline_timing": 6.414550886000143,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound2_4",
+    "decision": "Verified",
+    "baseline_timing": 449.2032865299989,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_valuebound100_5",
+    "decision": "Verified",
+    "baseline_timing": 18.451787730000433,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard2_valuebound20_5",
+    "decision": "Verified",
+    "baseline_timing": 49.18637872600084,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound2_5",
+    "decision": "Verified",
+    "baseline_timing": 151.94997319700087,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "poly1_1",
+    "decision": "Unknown",
+    "baseline_timing": 600,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd3-ll_valuebound50_3",
+    "decision": "Verified",
+    "baseline_timing": 72.09572289600146,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound10_9",
+    "decision": "Verified",
+    "baseline_timing": 22.40924119600095,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo1-ll_unwindbound2_1",
+    "decision": "Verified",
+    "baseline_timing": 81.42153933199916,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu_1",
+    "decision": "Verified",
+    "baseline_timing": 5.836708176000684,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound100_9",
+    "decision": "Verified",
+    "baseline_timing": 58.35355982600049,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound2_6",
+    "decision": "Verified",
+    "baseline_timing": 26.667008614000224,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "freire2_valuebound10_6",
+    "decision": "Falsified",
+    "baseline_timing": 92.77187386399964,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "lcm1_unwindbound2_5",
+    "decision": "Falsified",
+    "baseline_timing": 6.394206381000913,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "egcd2-ll_valuebound50_2",
+    "decision": "Verified",
+    "baseline_timing": 14.23164516200086,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohendiv-ll_unwindbound5_4",
+    "decision": "Verified",
+    "baseline_timing": 9.381214858000021,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "freire2_unwindbound10_6",
+    "decision": "Falsified",
+    "baseline_timing": 29.605863610999222,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound10_9",
+    "decision": "Verified",
+    "baseline_timing": 47.98534066100001,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "prod4br-ll_valuebound1_3",
+    "decision": "Verified",
+    "baseline_timing": 6.286069665000468,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "divbin2_valuebound2_2",
+    "decision": "Verified",
+    "baseline_timing": 43.37344274499992,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "prod4br-ll_valuebound2_1",
+    "decision": "Verified",
+    "baseline_timing": 8.471014761998958,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "freire2_valuebound10_1",
+    "decision": "Verified",
+    "baseline_timing": 266.0051154649991,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "underapprox_1-2_1",
+    "decision": "Verified",
+    "baseline_timing": 93.89990424400094,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo2-ll_valuebound5_1",
+    "decision": "Verified",
+    "baseline_timing": 7.044429589999709,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "benchmark24_conjunctive_1",
+    "decision": "Verified",
+    "baseline_timing": 6.1435151799996675,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_valuebound2_4",
+    "decision": "Verified",
+    "baseline_timing": 24.310297134999928,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "trex01-1_1",
+    "decision": "Falsified",
+    "baseline_timing": 5.455716918999315,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "egcd2-ll_unwindbound5_4",
+    "decision": "Verified",
+    "baseline_timing": 17.009136041000602,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps4-ll_unwindbound2_3",
+    "decision": "Verified",
+    "baseline_timing": 6.419637901000897,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard-u_5",
+    "decision": "Unknown",
+    "baseline_timing": 600,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "egcd-ll_valuebound10_3",
+    "decision": "Verified",
+    "baseline_timing": 8.36687917299787,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "freire2_valuebound10_2",
+    "decision": "Unknown",
+    "baseline_timing": 600,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard2_valuebound10_1",
+    "decision": "Verified",
+    "baseline_timing": 9.13544502899822,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu-ll_unwindbound2_8",
+    "decision": "Falsified",
+    "baseline_timing": 9.650164435002807,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "cohencu-ll_valuebound20_7",
+    "decision": "Verified",
+    "baseline_timing": 7.139335813997604,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_unwindbound5_3",
+    "decision": "Verified",
+    "baseline_timing": 14.289118165997934,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "hard2_unwindbound5_5",
+    "decision": "Verified",
+    "baseline_timing": 12.074857226998574,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "eureka_01-1_1",
+    "decision": "Unknown",
+    "baseline_timing": 600,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "modnf_1",
+    "decision": "Falsified",
+    "baseline_timing": 10.465614848999394,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "num_conversion_1_1",
+    "decision": "Verified",
+    "baseline_timing": 33.313506163001875,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps4-ll_valuebound5_3",
+    "decision": "Verified",
+    "baseline_timing": 6.660481077000441,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "ps2-ll_valuebound10_1",
+    "decision": "Verified",
+    "baseline_timing": 6.736070258997643,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "cohencu_9",
+    "decision": "Verified",
+    "baseline_timing": 30.33074436100287,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd-ll_unwindbound5_5",
+    "decision": "Falsified",
+    "baseline_timing": 14.847275470001478,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": false
+  },
+  {
+    "base_filename": "ps3-ll_1",
+    "decision": "Verified",
+    "baseline_timing": 6.626229877998412,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo1-u2_unwindbound100_1",
+    "decision": "Verified",
+    "baseline_timing": 6.962080707999121,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "dijkstra-u_valuebound2_1",
+    "decision": "Verified",
+    "baseline_timing": 9.582582916998945,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "egcd2-ll_valuebound2_5",
+    "decision": "Verified",
+    "baseline_timing": 19.39082740700178,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "geo3-ll_unwindbound2_1",
+    "decision": "Verified",
+    "baseline_timing": 141.52294457400058,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  },
+  {
+    "base_filename": "sll-buckets-2_3",
+    "decision": "Unknown",
+    "baseline_timing": 24.31927846399776,
+    "architecture": "32bit",
+    "property_file": "unreach-call.prp",
+    "expected_answer": true
+  }
+]
