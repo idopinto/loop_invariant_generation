@@ -3,15 +3,11 @@ from pathlib import Path
 from shutil import copy
 from typing import List, Dict, Optional
 from src.eval.model import Model
-import json
 import time
-import sys
 from dataclasses import dataclass
-# Add the project root to Python path for imports
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-from src.utils import Task, Rewriter, Program
+from src.utils.task import Task
+from src.utils.rewriter import Rewriter
+from src.utils.program import Program
 from src.eval.decision_procedure import DecisionProcedure
 from src.utils.utils import save_as_json
 
@@ -114,12 +110,12 @@ class InvBenchEvaluator:
                     '\t Target assert: {decision_procedure.target_assert}\n
                     '\t Candidate invariant: {candidate_invariant}\n
                     '\t valid invariant: {report.syntactic_validation_result}\n
-                    '\t final decision: {report.final_decision.name}\n
+                    '\t final decision: {report.final_decision}\n
                     '\t Decision rule: {report.decision_rule}\n
                     '\t Decision Procedure Timeout (UAutomizer baseline timing): {baseline_time:.2f}s\n
                     '\t Model generation time: {model_gen_time:.2f}s\n
-                    '\t Correctness: {report.invariant_correctness_report.decision.name} - {report.invariant_correctness_report.time_taken:.2f}s\n
-                    '\t Usefulness: {report.invariant_usefulness_report.decision.name} - {report.invariant_usefulness_report.time_taken:.2f}s\n
+                    '\t Correctness: {report.invariant_correctness_report.decision} - {report.invariant_correctness_report.time_taken:.2f}s\n
+                    '\t Usefulness: {report.invariant_usefulness_report.decision} - {report.invariant_usefulness_report.time_taken:.2f}s\n
                     '\t Verification time (max(correctness, usefulness)): {report.verification_time_taken:.2f}s\n
                     '\t Total time (verification + model generation): {report.total_time_taken:.2f}s\n""")
             else:
@@ -127,7 +123,7 @@ class InvBenchEvaluator:
                     '\t Target assert: {decision_procedure.target_assert}\n
                     '\t Candidate invariant: {candidate_invariant}\n
                     '\t valid invariant: {report.syntactic_validation_result}\n
-                    '\t final decision: {report.final_decision.name}\n""")
+                    '\t final decision: {report.final_decision}\n""")
             
             # Create result entry for final report
             task_result = {

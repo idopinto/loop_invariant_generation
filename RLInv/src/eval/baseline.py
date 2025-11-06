@@ -18,8 +18,8 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from tqdm import tqdm
 # Add the project root to Python path for imports
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
+# project_root = Path(__file__).parent.parent.parent
+# sys.path.insert(0, str(project_root))
 
 from src.utils.plain_verifier import run_uautomizer
 from src.utils.task import Task
@@ -292,55 +292,42 @@ def find_problem_files(evaluation_dir: Path) -> List[Path]:
 
 def process_problem(
     yml_file: Path,
-    uautomizer_path: str,
+    uautomizer_path: Path,
     properties_dir: Path,
     timeout_seconds: int = 300
-) -> Dict:
+) -> Dict[str, Any]:
     """Process a single problem and return results."""
     
     try:
-        # Create Task object using existing code
-        # Pass the full path so Task can infer the correct c_dir
         task = Task(yml_file, property_kind="unreach")
         
-        # Get base filename
-        base_filename = yml_file.stem
-        
-        # print(f"Processing: {base_filename}")
-        # print(f"  C file: {task.source_code_path}")
-        # print(f"  Property file: {task.property_path}")
-        # print(f"  Architecture: {task.arch}")
-        # print(f"  Expected answer: {task.answer}")
-        
-        # Run UAutomizer without saving log files
         report = run_uautomizer(
             uautomizer_path=uautomizer_path,
             c_file_path=str(task.source_code_path),
-            property_file_path=str(task.property_path),
-            reports_dir=Path("/tmp"),  # Use temp directory, we won't keep these files
+            property_file_path=str(properties_dir / task.property_path),
+            reports_dir=Path("/tmp"),
             arch=task.arch,
             timeout_seconds=timeout_seconds
         )
         
-        # Convert decision to string
-        decision_str = report.decision.name if report.decision else "Unknown"
         return {
-            "base_filename": base_filename,
-            "decision": decision_str,
-            "baseline_timing": report.time_taken,
-            "architecture": task.arch,
-            "property_file": Path(task.property_path).name,  # Only filename, not full path
-            "expected_answer": task.answer
+            "file": yml_file.stem,
+            "time": report.time_taken,
+            "result": report.decision
         }
-        
     except Exception as e:
         print(f"Error creating Task for {yml_file}: {e}")
         return {
-            "base_filename": yml_file.stem,
-            "decision": "Error",
-            "baseline_timing": 0.0,
-            "error_message": str(e)
+            "file": yml_file.stem,
+            "time": 0.0,
+            "result": "ERROR"
         }
+        # return {
+        #     "base_filename": yml_file.stem,
+        #     "decision": "Error",
+        #     "baseline_timing": 0.0,
+        #     "error_message": str(e)
+        # }
 
 
 def main():

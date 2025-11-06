@@ -1,17 +1,12 @@
 from pathlib import Path
-import sys
-from shutil import copy
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
-
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-from src.utils.plain_verifier import run_uautomizer, VerifierCallReport, Decision
+# project_root = Path(__file__).parent.parent.parent
+# sys.path.insert(0, str(project_root))
+from src.utils.plain_verifier import run_uautomizer, VerifierCallReport
 from src.utils.program import Program
 from src.utils.predicate import Predicate
 from src.eval.decision_procedure_report import DecisionProcedureReport
 from src.utils.validate import syntactic_validation
-from src.utils.equivalence import check_semantic_equivalence
 
 class DecisionProcedure:
     def __init__(self, program: Program, target_property_file_path: Path, code_dir: Path, root_dir: Path, timeout_seconds: float = 600.0):
@@ -24,41 +19,28 @@ class DecisionProcedure:
         else:
             self.target_assert = None   
         self.code_dir = code_dir
-        # print(f"Target property file path: {self.target_property_file_path}")
-        # print(f"Target assert: {self.target_assert}")
         
         # Create reports directory
         self.reports_dir = Path(code_dir).parent / "reports"
         self.reports_dir.mkdir(parents=True, exist_ok=True)
-        # print(f"Reports directory created: {self.reports_dir}")
         self.timeout_seconds = max(0.1, float(timeout_seconds))
         self.uautomizer_executable_path = root_dir / "tools" / "uautomizer" / "Ultimate.py"
     
     def run_verifier(self, program_str: str, property_file_path: Path, timeout_seconds: float, kind: str):
-        c_file_path = self.code_dir / f"code_for_{kind}.c"
-        with open(c_file_path, 'w') as out_file:
-            # print(f"--------------------------------- Program ({kind}) ---------------------------------")
+        program_path = self.code_dir / f"code_for_{kind}.c"
+        with open(program_path, 'w') as out_file:
             out_file.write(program_str)
-            # print(f"Program written to file:\n {c_file_path}")
-            # print(f"```c\n{program_str}\n```")
-        verifier_report: VerifierCallReport = run_uautomizer(uautomizer_path=self.uautomizer_executable_path, 
-                                c_file_path=c_file_path, 
-                                property_file_path=property_file_path,
-                                reports_dir=self.reports_dir,
-                                timeout_seconds=timeout_seconds)
-        
-        # Copy Ultimate.log to preserve it for this specific verification call
-        ultimate_log_path = self.code_dir.parent / "Ultimate.log"
-        if ultimate_log_path.exists():
-            ultimate_log_copy_path = self.reports_dir / f"ultimate_{kind}.log"
-            copy(ultimate_log_path, ultimate_log_copy_path)
-            # print(f"Ultimate log copied to: {ultimate_log_copy_path}")
-        
-        # print(f"Verifier report: {verifier_report}")
+        verifier_report: VerifierCallReport = run_uautomizer(
+            program_path=program_path, 
+            property_file_path=property_file_path,
+            reports_dir=self.reports_dir,
+            timeout_seconds=timeout_seconds,
+            uautomizer_path=self.uautomizer_executable_path
+        )
         return verifier_report
     
     
-    def decide(self, candidate_invariant: Predicate) -> DecisionProcedureReport:
+    def decide(self, candidate_invariant: Predicate, model_gen_time: float = 0.0) -> DecisionProcedureReport:
         
         program_for_correctness = self.program.get_program_with_assertion(predicate=candidate_invariant, 
                                                      assumptions=[],
@@ -107,7 +89,7 @@ class DecisionProcedure:
                     invariant_usefulness_report = result
                     # Short-circuit DEC-FALSE: if usefulness is Falsified, we can skip waiting for correctness
                     # and decide F immediately (DEC-FALSE doesn't require da)
-                    if invariant_usefulness_report.decision == Decision.Falsified:
+                    if invariant_usefulness_report.decision == "FALSE":
                         # Try to cancel correctness if it's still running
                         if not correctness_future.done():
                             correctness_future.cancel()
@@ -116,12 +98,12 @@ class DecisionProcedure:
         
         decision_rule = ""
         # Apply decision calculus
-        final_decision = Decision.Unknown
+        final_decision = "UNKNOWN"
         
         # DEC-FALSE: If db = F, decide F (short-circuit refutation)
         # This is a "short-circuit" because da doesn't need to be T to decide F
-        if invariant_usefulness_report.decision == Decision.Falsified:
-            final_decision = Decision.Falsified
+        if invariant_usefulness_report.decision == "FALSE":
+            final_decision = "FALSE"
             decision_rule = "DEC-FALSE"
         
         # DEC_PROP: If da = T and db ∈ {T, U}, decide db
@@ -129,8 +111,8 @@ class DecisionProcedure:
         # once the candidate invariant q is established, the outcome is exactly the verifier's
         # answer on the goal under the assumption q
         elif (invariant_correctness_report is not None and 
-              invariant_correctness_report.decision == Decision.Verified and 
-              invariant_usefulness_report.decision in {Decision.Verified, Decision.Unknown}):
+              invariant_correctness_report.decision == "TRUE" and 
+              invariant_usefulness_report.decision in {"TRUE", "UNKNOWN"}):
             final_decision = invariant_usefulness_report.decision
             decision_rule = "DEC-PROP"
         
@@ -138,14 +120,15 @@ class DecisionProcedure:
         # Rule DEC-U gives explicit conditions for inconclusiveness:
         # the goal is not refuted under q and q is not established as an invariant
         elif (invariant_correctness_report is not None and 
-              invariant_correctness_report.decision != Decision.Verified and 
-              invariant_usefulness_report.decision != Decision.Falsified):
-            final_decision = Decision.Unknown
+              invariant_correctness_report.decision != "TRUE" and 
+              invariant_usefulness_report.decision != "FALSE"):
+            final_decision = "UNKNOWN"
             decision_rule = "DEC-U"
         # If correctness was cancelled (short-circuited), we already decided F above
         elif invariant_correctness_report is None:
             # This should only happen when DEC-FALSE was triggered
             # (decision already set to Falsified above)
+            final_decision = "FALSE"
             decision_rule = "DEC-FALSE"
         
         # Calculate verification time: max of both runs since they execute in parallel
@@ -165,6 +148,7 @@ class DecisionProcedure:
             invariant_correctness_report=invariant_correctness_report,
             invariant_usefulness_report=invariant_usefulness_report,
             verification_time_taken=verification_time_taken,
+            model_generation_time=model_gen_time,
         )  
         return final_report
     
@@ -175,7 +159,7 @@ class DecisionProcedure:
         print(f"The candidate invariant is valid: {is_valid}")
         # print(f"The candidate invariant is logically equivalent to the target assert: {is_logicaly_equivalent}")
         if is_valid: # and not is_logicaly_equivalent:
-           final_report = self.decide(candidate_invariant)
+           final_report = self.decide(candidate_invariant, model_gen_time)
            final_report.total_time_taken = final_report.verification_time_taken + model_gen_time
         # save the final report to a json file
         report_file_path = self.reports_dir / "decision_report.json"

@@ -4,11 +4,11 @@ from pathlib import Path
 import json
 from src.utils.predicate import Predicate
 from src.utils.program import Program
-from src.utils.plain_verifier import VerifierCallReport, Decision
+from src.utils.plain_verifier import VerifierCallReport
 
 @dataclass
 class DecisionProcedureReport:
-    final_decision: Decision = Decision.Unknown
+    final_decision: str = "UNKNOWN"
     decision_rule: str = ""
     program: Optional[Program] = None
     target_assert: Optional[Predicate] = None
@@ -25,7 +25,7 @@ class DecisionProcedureReport:
     def to_dict(self) -> dict:
         """Convert the report to a dictionary for JSON serialization."""
         return {
-            'final_decision': self.final_decision.name,
+            'final_decision': self.final_decision,
             'decision_rule': self.decision_rule,
             'target_assert': {
                 'content': self.target_assert.content,
@@ -78,7 +78,7 @@ class DecisionProcedureReport:
         correctness_report = None
         if data.get('invariant_correctness_report'):
             correctness_report = VerifierCallReport(
-                decision=Decision[data['invariant_correctness_report']['decision']],
+                decision=data['invariant_correctness_report']['decision'],
                 time_taken=data['invariant_correctness_report']['time_taken'],
                 timeout=data['invariant_correctness_report']['timeout'],
                 error=data['invariant_correctness_report']['error'],
@@ -89,7 +89,7 @@ class DecisionProcedureReport:
         usefulness_report = None
         if data.get('invariant_usefulness_report'):
             usefulness_report = VerifierCallReport(
-                decision=Decision[data['invariant_usefulness_report']['decision']],
+                decision= data['invariant_usefulness_report']['decision'],
                 time_taken=data['invariant_usefulness_report']['time_taken'],
                 timeout=data['invariant_usefulness_report']['timeout'],
                 error=data['invariant_usefulness_report']['error'],
@@ -98,7 +98,7 @@ class DecisionProcedureReport:
             )
         
         return cls(
-            final_decision=Decision[data['final_decision']],
+            final_decision=data['final_decision'],
             decision_rule=decision_rule,
             program=None,  # Program object is not serialized
             target_assert=target_assert,

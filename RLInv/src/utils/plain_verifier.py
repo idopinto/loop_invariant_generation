@@ -9,17 +9,17 @@ from pathlib import Path
 from typing import Optional, Union
 
 
-class Decision(Enum):
-    """Verification result decision."""
-    Verified = 1
-    Falsified = 2
-    Unknown = 3
+# class Decision(Enum):
+#     """Verification result decision."""
+#     Verified = 1
+#     Falsified = 2
+#     Unknown = 3
 
 
 @dataclass
 class VerifierCallReport:
     """Report containing verification results and metadata."""
-    decision: Decision = Decision.Unknown
+    decision: str = "UNKNOWN" # "TRUE", "FALSE", "UNKNOWN"
     time_taken: float = 0.0
     timeout: bool = False
     error: bool = False
@@ -29,7 +29,7 @@ class VerifierCallReport:
     def to_dict(self) -> dict:
         """Convert report to dictionary for JSON serialization."""
         return {
-            'decision': self.decision.name,
+            'decision': self.decision,
             'time_taken': self.time_taken,
             'timeout': self.timeout,
             'error': self.error,
@@ -48,7 +48,7 @@ class VerifierCallReport:
         with open(file_path, 'r') as f:
             data = json.load(f)
         return cls(
-            decision=Decision[data['decision']],
+            decision=data['decision'],
             time_taken=data['time_taken'],
             timeout=data['timeout'],
             error=data['error'],
@@ -57,18 +57,15 @@ class VerifierCallReport:
         )
 
 
-def _parse_result(output: str) -> Decision:
-    """Parse verification result from UAutomizer output."""
-    if "Result:" not in output:
-        return Decision.Unknown
-    
-    if "Result:\nTRUE" in output or "Result: TRUE" in output:
-        return Decision.Verified
-    elif "Result:\nFALSE" in output or "Result: FALSE" in output:
-        return Decision.Falsified
-    elif "Result:\nUNKNOWN" in output or "Result: UNKNOWN" in output:
-        return Decision.Unknown
-    return Decision.Unknown
+def _parse_result(output: str) -> str:
+    """Parse verification result from UAutomizer output (returns "TRUE", "FALSE", or "UNKNOWN") and whether there was an error."""
+    if "Result: TRUE" in output or "Result:\nTRUE" in output:
+        return "TRUE", False
+    if "Result: FALSE" in output or "Result:\nFALSE" in output:
+        return "FALSE", False
+    if "Result: UNKNOWN" in output or "Result:\nUNKNOWN" in output:
+        return "UNKNOWN", False
+    return "UNKNOWN", True
 
 
 def _write_file(file_path: Path, content: str) -> None:
@@ -77,16 +74,8 @@ def _write_file(file_path: Path, content: str) -> None:
     with open(file_path, 'w') as f:
         f.write(content)
 
-
-def _get_uautomizer_path(root_dir: Optional[Path] = None) -> Path:
-    """Get default UAutomizer executable path."""
-    if root_dir:
-        return root_dir / "tools" / "uautomizer" / "Ultimate.py"
-    return Path('/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py')
-
-
 def run_uautomizer(
-    c_file_path: Union[Path, str],
+    program_path: Union[Path, str],
     property_file_path: Union[Path, str],
     reports_dir: Union[Path, str],
     arch: str = '32bit',
@@ -97,7 +86,7 @@ def run_uautomizer(
     Run UAutomizer verifier on a C file.
     
     Args:
-        c_file_path: Path to the C file to verify.
+        program_path: Path to the C program to verify.
         property_file_path: Path to the property specification file (.prp).
         reports_dir: Directory where log files will be saved.
         arch: Architecture ('32bit' or '64bit').
@@ -108,21 +97,20 @@ def run_uautomizer(
         VerifierCallReport with verification results and metadata.
     """
     # Convert all paths to Path objects
-    uautomizer_path = Path(uautomizer_path) if uautomizer_path else _get_uautomizer_path()
-    c_file_path = Path(c_file_path)
+    program_path = Path(program_path)
     property_file_path = Path(property_file_path)
     reports_dir = Path(reports_dir)
     reports_dir.mkdir(parents=True, exist_ok=True)
     
-    log_file_path = reports_dir / f"{c_file_path.stem}.log"
-    err_file_path = reports_dir / f"{c_file_path.stem}.err"
+    log_file_path = reports_dir / f"{program_path.stem}.log"
+    err_file_path = reports_dir / f"{program_path.stem}.err"
     
     # Validate required files exist
-    for path in [uautomizer_path, c_file_path, property_file_path]:
+    for path in [uautomizer_path, program_path, property_file_path]:
         if not path.exists():
             _write_file(err_file_path, f"Required file not found: {path}")
             return VerifierCallReport(
-                decision=Decision.Unknown,
+                decision="UNKNOWN",
                 time_taken=0.0,
                 error=True,
                 log_file_path=str(log_file_path),
@@ -135,7 +123,7 @@ def run_uautomizer(
         str(uautomizer_path),
         '--spec', str(property_file_path),
         '--architecture', arch,
-        '--file', str(c_file_path),
+        '--file', str(program_path),
         '--full-output'
     ]
     
@@ -164,9 +152,7 @@ def run_uautomizer(
         _write_file(log_file_path, completed_process.stdout)
         _write_file(err_file_path, completed_process.stderr)
         
-        report.decision = _parse_result(completed_process.stdout)
-        if report.decision == Decision.Unknown and "Result:" not in completed_process.stdout:
-            report.error = True
+        report.decision, report.error = _parse_result(completed_process.stdout)
             
     except subprocess.TimeoutExpired as e:
         report.timeout = True

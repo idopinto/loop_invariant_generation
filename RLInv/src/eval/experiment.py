@@ -100,7 +100,7 @@ class EvalExperiment:
             model_name = model_results.get("model_path_or_name", "unknown_model")
             self.inv_bench_metrics.add_model_with_timing_comparison(model_name=model_name, 
                                                                     model_results=model_results, 
-                                                                    baseline_results=self.baseline_timing, 
+                                                                    baseline_timing=self.baseline_timing, 
                                                                     include_model_generation_time=self.config.include_model_generation_time)
         print("\n" + "="*80)
         print("Final Metrics Table:")
