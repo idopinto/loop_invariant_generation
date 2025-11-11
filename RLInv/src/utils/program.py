@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import List, Set, Dict
-import re
+from typing import List, Set, Dict, Optional
 from copy import copy
+import re
 from .predicate import Predicate
 
 PATCH = ('void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\n'
@@ -14,6 +14,7 @@ class AssertionPointAttributes(Enum):
     BeforeAssertion = 3
     BeginningOfLoop = 4
     EndOfLoop = 5
+
 
 class Program:
     def __init__(self, lines: List[str], replacement: Dict[str, str]):
@@ -45,20 +46,26 @@ class Program:
                     self.add_assertion_point(len(self.lines), AssertionPointAttributes.EndOfLoop)
                     #self.add_assertion_point(len(self.lines) - 1, AssertionPointAttributes.InLoop)
                     last_line_in_loop = False
-
-            if line.strip().split("(")[0] == "assert":
+            # print(line)
+            stripped_line = line.strip()
+            if stripped_line and stripped_line.split("(")[0] == "assert":
+                # print(stripped_line)
+                # print(stripped_line.split("(")[0])
                 self.add_assertion_point(len(self.lines) - 1, AssertionPointAttributes.BeforeAssertion)
                 if last_line_in_loop:
                     self.add_assertion_point(len(self.lines) - 1, AssertionPointAttributes.InLoop)
 
                 result = re.search(r'assert\((.*?)\);', line)
-                self.assertions.append(Predicate(result.group(1), len(self.lines) - 1))
-            elif line.strip().split("(")[0] == "assume":
+                if result:
+                    self.assertions.append(Predicate(result.group(1), len(self.lines) - 1))
+
+            elif stripped_line and stripped_line.split("(")[0] == "assume":
                 result = re.search(r'assume\((.*?)\);', line)
-                self.lemmas.append(Predicate(result.group(1), len(self.lines) - 1))
+                if result:
+                    self.lemmas.append(Predicate(result.group(1), len(self.lines) - 1))
             else:
                 self.lines.append(line)
-                if line.strip().split()[0] in ["for", "do", "while"]:
+                if stripped_line and stripped_line.split()[0] in ["for", "do", "while"]:
                     self.number_of_loops += 1
                     self.add_assertion_point(len(self.lines) - 2, AssertionPointAttributes.BeforeLoop)
                     if last_line_in_loop:
@@ -91,13 +98,31 @@ class Program:
 
     @staticmethod
     def assume_predicate(lines: List[str], predicate: Predicate):
+        # Extract indentation from the current line
+        # Handle case where line might have been modified (multiple insertions)
+        # current_line = lines[predicate.line_number]
+        # Get the first line (before any newlines from previous insertions)
+        # first_line = current_line.split('\n')[0]
+        # Extract indentation from the first line
+        # indent = len(first_line) - len(first_line.lstrip())
+        # indent_str = first_line[:indent] if indent > 0 else ""
+        # lines[predicate.line_number] += f"\n{indent_str}assume({predicate.content});"
         lines[predicate.line_number] += f"\nassume({predicate.content});"
 
     @staticmethod
     def assert_predicate(lines: List[str], predicate: Predicate):
+        # Extract indentation from the current line
+        # Handle case where line might have been modified (multiple insertions)
+        # current_line = lines[predicate.line_number]
+        # Get the first line (before any newlines from previous insertions)
+        # first_line = current_line.split('\n')[0]
+        # Extract indentation from the first line
+        # indent = len(first_line) - len(first_line.lstrip())
+        # indent_str = first_line[:indent] if indent > 0 else ""
+        # lines[predicate.line_number] += f"\n{indent_str}assert({predicate.content});"
         lines[predicate.line_number] += f"\nassert({predicate.content});"
 
-    def get_program_with_assertion(self, predicate: Predicate, assumptions: List[Predicate],
+    def get_program_with_assertion(self, predicate: Optional[Predicate], assumptions: List[Predicate],
                                    assertion_points: Dict[int,str],
                                    forGPT : bool,
                                    dump=False):
@@ -118,20 +143,26 @@ class Program:
         for assumption in assumptions:
             self.assume_predicate(lines, assumption)
 
-        self.assert_predicate(lines, predicate)
+        if predicate is not None:
+            self.assert_predicate(lines, predicate)
 
         if forGPT:
-            for i, line in enumerate(lines):
-                if i < predicate.line_number:
-                    program += line + "\n"
-                elif i >= predicate.line_number and (not self.in_loop[i]):
-                    program += line + "\n"
-                    for m in range(self.unclosed_brackets[i]):
-                        if m == self.unclosed_brackets[i] - 1:
-                            program += "return 1;\n"
-                        program += "}\n"
-                    break
-                else:
+            if predicate is not None:
+                for i, line in enumerate(lines):
+                    if i < predicate.line_number:
+                        program += line + "\n"
+                    elif i >= predicate.line_number and (not self.in_loop[i]):
+                        program += line + "\n"
+                        for m in range(self.unclosed_brackets[i]):
+                            if m == self.unclosed_brackets[i] - 1:
+                                program += "return 1;\n"
+                            program += "}\n"
+                        break
+                    else:
+                        program += line + "\n"
+            else:
+                # If predicate is None, include all lines
+                for line in lines:
                     program += line + "\n"
         else:
             for line in lines:

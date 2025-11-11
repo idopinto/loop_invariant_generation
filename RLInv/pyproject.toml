@@ -18,11 +18,14 @@ classifiers = [
 
 # Core dependencies (always required)
 dependencies = [
+    "datasets>=4.4.0",
     "ipykernel>=7.1.0",
+    "ipywidgets>=8.1.7",
     "jupyter>=1.1.1",
     "matplotlib>=3.10.7",
     "numpy>=2.3.4",
     "pandas>=2.3.3",
+    "peft>=0.17.1",
     "pycparser>=2.23",
     "pytest>=8.4.2",
     "python-dotenv>=1.1.1",
@@ -30,7 +33,10 @@ dependencies = [
     "seaborn>=0.13.2",
     "together>=1.5.26",
     "tqdm>=4.67.1",
+    "trackio>=0.8.1",
     "trl>=0.24.0",
+    "wandb>=0.22.3",
+    "weave>=0.52.16",
     "z3-solver>=4.15.4.0",
 ]
 

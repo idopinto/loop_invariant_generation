@@ -1,7 +1,5 @@
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-# project_root = Path(__file__).parent.parent.parent
-# sys.path.insert(0, str(project_root))
 from src.utils.plain_verifier import run_uautomizer, VerifierCallReport
 from src.utils.program import Program
 from src.utils.predicate import Predicate
@@ -38,7 +36,6 @@ class DecisionProcedure:
             uautomizer_path=self.uautomizer_executable_path
         )
         return verifier_report
-    
     
     def decide(self, candidate_invariant: Predicate, model_gen_time: float = 0.0) -> DecisionProcedureReport:
         
@@ -95,6 +92,13 @@ class DecisionProcedure:
                             correctness_future.cancel()
                         # We have what we need for DEC-FALSE, break early
                         break
+            
+            # After loop: if correctness completed but wasn't captured, get it now
+            if invariant_correctness_report is None and correctness_future.done():
+                try:
+                    invariant_correctness_report = correctness_future.result()
+                except Exception:
+                    pass  # If it was cancelled or failed, leave it as None
         
         decision_rule = ""
         # Apply decision calculus

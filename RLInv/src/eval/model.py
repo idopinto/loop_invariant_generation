@@ -22,7 +22,7 @@ class Model:
             "n": 1,
             "max_tokens": 2048,
             "reasoning_effort": "low",
-            "temperature": 0.7,
+            "temperature": 0.0,
         }
         
     def _label_assertion_points(self, assertion_points: dict):
@@ -58,7 +58,7 @@ class Model:
         locations = [f"  Line {labeled_points[ln]}: Line {ln} ({', '.join([a.name for a in assertion_points[ln]])})" 
                      for ln in sorted_lines]
         available_labels = ', '.join([labeled_points[ln] for ln in sorted_lines])
-        user_msg = f"""Given the following C program, produce a non-trivial loop invariant that implies target property and will be strong enough to accelerate verification by a Formal Verifier (UAutomizer).
+        user_msg = f"""Given the following C program, generate a loop invariant that implies the target property and its location in the program.
 ```c
 {formatted_program}
 ```
@@ -66,18 +66,17 @@ class Model:
 Available locations for placing the invariant:
 {chr(10).join(locations)}
 
-Generate a valid C assertion with the following format:
+Format:
 assert(<predicate>); // Line <label>
 
 Where:
-- <predicate> is a valid boolean C expression (use && for AND, || for OR)
+- <predicate> is a valid boolean C expression
 - <label> is one of the available location labels ({available_labels})
-- 
-- Prefer equality over inequality when possible
 - Don't include explanations, just the assert statement
 
 Example format:
-assert(x >= 0 && y < 100); // Line A"""
+assert(x >= 0 && y < 100); // Line A
+"""
         return "You understand C programs well and can generate strong loop invariants for program verification.", user_msg
     
     def _parse_response(self, response_content: str, name_to_line: dict, sorted_lines: list):

@@ -1,11 +1,7 @@
 from asyncio import Task
 import datetime
-
 import yaml
-import argparse
 import subprocess
-import os
-from os.path import join, basename, abspath
 from pathlib import Path
 from typing import List, Dict, Optional 
 import json
@@ -119,7 +115,7 @@ def load_dataset(dataset_path: Path, property_kind: str = "unreach", limit: int 
     print(f"Loading dataset from: {dataset_path}")
     for yml_file in dataset_path.glob("*.yml"):
         # print(yml_file)s
-        if limit is not None and len(tasks) >= limit:
+        if limit is not None and limit != -1 and len(tasks) >= limit:
             break
         if prefix is not None and not yml_file.stem.startswith(prefix):
             continue

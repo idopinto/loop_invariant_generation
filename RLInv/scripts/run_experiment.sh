@@ -4,11 +4,11 @@
 #SBATCH --error=slurm/experiment_%j.err
 #SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
+#SBATCH --mem=16G
 
 # Script to run experiment evaluation on models
-# Usage: sbatch run_experiment.sh <exp_id> <data_split> <models...> [--limit <limit>] [--include_model_generation_time] [--default_timeout_seconds <timeout>] [--property_kind <kind>]
-# Usage: ./run_experiment.sh <exp_id> <data_split> <models...> [--limit <limit>] [--include_model_generation_time] [--default_timeout_seconds <timeout>] [--property_kind <kind>]
+# Usage: sbatch run_experiment.sh <exp_id> <data_split> <models...> [--limit <limit>] [--default_timeout_seconds <timeout>] [--property_kind <kind>]
+# Usage: ./run_experiment.sh <exp_id> <data_split> <models...> [--limit <limit>] [--default_timeout_seconds <timeout>] [--property_kind <kind>]
 
 set -e
 
@@ -18,12 +18,11 @@ if [ $# -lt 3 ]; then
     echo ""
     echo "Required arguments:"
     echo "  exp_id: Experiment ID (e.g., 001, test_run_001)"
-    echo "  data_split: Data split (easy or hard)"
+    echo "  data_split: Data split (easy, hard, single, unknowns, or full)"
     echo "  model: Model name or path (can specify multiple, space-separated)"
     echo ""
     echo "Optional arguments:"
     echo "  --limit <n>                    Limit number of tasks to evaluate (default: -1 for all)"
-    echo "  --include_model_generation_time Include model generation time in speedup calculations"
     echo "  --default_timeout_seconds <n>  Default timeout seconds for verification (default: 600)"
     echo "  --property_kind <kind>         Property kind (default: unreach)"
     echo ""
@@ -38,8 +37,9 @@ DATA_SPLIT=$2
 shift 2  # Remove first two arguments
 
 # Validate split
-if [ "$DATA_SPLIT" != "easy" ] && [ "$DATA_SPLIT" != "hard" ]; then
-    echo "Error: Data split must be 'easy' or 'hard'"
+VALID_SPLITS=("easy" "hard" "single" "unknowns" "full")
+if [[ ! " ${VALID_SPLITS[@]} " =~ " ${DATA_SPLIT} " ]]; then
+    echo "Error: Data split must be one of: ${VALID_SPLITS[*]}"
     exit 1
 fi
 
@@ -55,11 +55,6 @@ while [ $# -gt 0 ]; do
             EXTRA_ARGS+=("--limit" "$2")
             shift 2
             ;;
-        --include_model_generation_time)
-            PARSING_MODELS=false
-            EXTRA_ARGS+=("--include_model_generation_time")
-            shift
-            ;;
         --default_timeout_seconds)
             PARSING_MODELS=false
             EXTRA_ARGS+=("--default_timeout_seconds" "$2")
@@ -68,6 +63,11 @@ while [ $# -gt 0 ]; do
         --property_kind)
             PARSING_MODELS=false
             EXTRA_ARGS+=("--property_kind" "$2")
+            shift 2
+            ;;
+        --uautomizer_version)
+            PARSING_MODELS=false
+            EXTRA_ARGS+=("--uautomizer_version" "$2")
             shift 2
             ;;
         *)

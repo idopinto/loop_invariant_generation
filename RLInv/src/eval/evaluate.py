@@ -1,16 +1,15 @@
-
+import time
 from pathlib import Path
 from shutil import copy
 from typing import List, Dict, Optional
 from src.eval.model import Model
-import time
 from dataclasses import dataclass
 from src.utils.task import Task
 from src.utils.rewriter import Rewriter
 from src.utils.program import Program
 from src.eval.decision_procedure import DecisionProcedure
 from src.utils.utils import save_as_json
-
+from tqdm import tqdm
 @dataclass
 class InvBenchEvaluatorConfig:
     working_dir: Path
@@ -35,7 +34,7 @@ class InvBenchEvaluator:
         """
         Create evaluators for each task.
         """
-        for i, task in enumerate(self.config.tasks):
+        for i, task in tqdm(enumerate(self.config.tasks), total=len(self.config.tasks), desc="Creating evaluators"):
             # Create a unique subdirectory for each task within the main working directory
             task_dir = self.config.working_dir / f"task_{i}_{task.source_code_path.stem}"
             task_dir.mkdir(parents=True, exist_ok=True)
@@ -50,7 +49,7 @@ class InvBenchEvaluator:
             copy(task.source_code_path, c_program_path)
             copy(task.property_path, target_property_path)
 
-            r = Rewriter(c_program_path)
+            r = Rewriter(c_program_path, rewrite=True)
             program = Program(r.lines_to_verify, r.replacement)
             
             # Get timeout for this task: use baseline timing if available, otherwise default to 30 seconds
@@ -91,7 +90,7 @@ class InvBenchEvaluator:
             'results': []
         }
         
-        for i, evaluator_data in enumerate(self.evaluators):
+        for i, evaluator_data in tqdm(enumerate(self.evaluators), total=len(self.evaluators), desc="Evaluating tasks"):
             task = evaluator_data['task']
             program = evaluator_data['program']
             decision_procedure = evaluator_data['decision_procedure']
@@ -105,7 +104,8 @@ class InvBenchEvaluator:
             baseline_time = self.baseline_timing_lookup.get(task.yml_file.stem, 0.0)
             report = decision_procedure.run(candidate_invariant, model_gen_time)
             if report.syntactic_validation_result:
-                report.total_time_taken = report.verification_time_taken + model_gen_time                
+                report.total_time_taken = report.verification_time_taken + model_gen_time
+                correctness_info = "N/A (short-circuited)" if report.invariant_correctness_report is None else f"{report.invariant_correctness_report.decision} - {report.invariant_correctness_report.time_taken:.2f}s"
                 print(f"""Decision Procedure summary: \n
                     '\t Target assert: {decision_procedure.target_assert}\n
                     '\t Candidate invariant: {candidate_invariant}\n
@@ -114,7 +114,7 @@ class InvBenchEvaluator:
                     '\t Decision rule: {report.decision_rule}\n
                     '\t Decision Procedure Timeout (UAutomizer baseline timing): {baseline_time:.2f}s\n
                     '\t Model generation time: {model_gen_time:.2f}s\n
-                    '\t Correctness: {report.invariant_correctness_report.decision} - {report.invariant_correctness_report.time_taken:.2f}s\n
+                    '\t Correctness: {correctness_info}\n
                     '\t Usefulness: {report.invariant_usefulness_report.decision} - {report.invariant_usefulness_report.time_taken:.2f}s\n
                     '\t Verification time (max(correctness, usefulness)): {report.verification_time_taken:.2f}s\n
                     '\t Total time (verification + model generation): {report.total_time_taken:.2f}s\n""")

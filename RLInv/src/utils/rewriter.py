@@ -1,13 +1,6 @@
 from typing import Dict
-import sys
 import re
-import os
 from pathlib import Path
-
-# # Add the project root to Python path for imports
-# project_root = Path(__file__).parent.parent.parent
-# sys.path.insert(0, str(project_root))
-# sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from src.utils.utils import run_subprocess_and_get_output
 from configs import global_configurations as GC
 
@@ -19,21 +12,16 @@ class Rewriter:
     Transforms C code with verification annotations into clean, formatted code suitable
     for analysis by replacing __VERIFIER_* functions with standard equivalents.
     """
-    def __init__(self, filename: Path, rewrite=True, handle_reach_error=False):
+    def __init__(self, filename: Path, rewrite=True, handle_reach_error=False, remove_comments=True):
         """Initialize rewriter with C code from file."""
-        self.code = filename.read_text().strip() # type: ignore
-        # ## add marker for ground truth invariant line number with // GT
-        # if gt_invariant_line_number is not None:
-        #     self.code = self.code.split("\n")
-        #     self.code[gt_invariant_line_number - 1] = self.code[gt_invariant_line_number - 1] + " // GT"
-        #     self.code = "\n".join(self.code)
+        self.code = filename.read_text().strip()
         self.new_code = self.code
 
         if rewrite:
             # Process code: remove comments, format, and replace verification functions
             self.remove_comments(with_gcc=True)
             self.remove_re_pattern(r'__attribute__\s*\(\(.*?\)\)')
-
+            self.remove_re_pattern(r'printf\s*\([^)]*\)\s*;')
             # Remove verification functions
             self.remove_function("void reach_error")
             self.remove_function("void __VERIFIER_assert")
@@ -49,28 +37,19 @@ class Rewriter:
             self.has_reach_error = False
             if handle_reach_error:
                 self.replace_reach_error_with_assertion()
+            
+            # Join multi-line assertions into single lines
+            self.join_multiline_assertions()
 
-            self.lines_to_verify = self.new_code.split("\n")
-
-            # Replace nondeterministic functions with random values
-            self.remove_verifier_nondet()
-            self.lines_for_gpt = self.new_code.split("\n")
-            # find the line number of the GT comment
-            # for i in range(len(self.lines_to_verify)):
-            #     if "// GT" in self.lines_to_verify[i]:
-            #         self.gt_for_gpt = i
-            #         print(f"GT for GPT: {self.gt_for_gpt}")
-            #                         # check that gt_for_gpt is valid location from the program.assertion_points
-            #         # remove the // GT comment from the lines_to_verify
-            #         # self.lines_to_verify[i] = self.lines_to_verify[i].replace("// GT", "")
-            #         # self.lines_for_gpt[i] = self.lines_for_gpt[i].replace("// GT", "")
-            #         break
-                
-            self.replacement: Dict[str, str] = {}
-            assert(len(self.lines_for_gpt) == len(self.lines_to_verify))
-            for i in range(len(self.lines_to_verify)):
-                if self.lines_to_verify[i] != self.lines_for_gpt[i]:
-                    self.replacement[self.lines_to_verify[i]] = self.lines_for_gpt[i]
+        self.lines_to_verify = self.new_code.split("\n")
+        # Replace nondeterministic functions with random values
+        self.remove_verifier_nondet()
+        self.lines_for_gpt = self.new_code.split("\n") 
+        self.replacement: Dict[str, str] = {}
+        assert(len(self.lines_for_gpt) == len(self.lines_to_verify))
+        for i in range(len(self.lines_to_verify)):
+            if self.lines_to_verify[i] != self.lines_for_gpt[i]:
+                self.replacement[self.lines_to_verify[i]] = self.lines_for_gpt[i]
 
     def find_all_loops(self):
         """Count total number of loops in the code using clang AST."""
@@ -128,6 +107,7 @@ class Rewriter:
         return tokens
 
     def remove_verifier_nondet(self):
+        
         """Replace __VERIFIER_nondet_* functions with random value casts."""
         tokens = self.get_tokens_with_verifier_nondet(self.new_code)
         for token in tokens:
@@ -172,6 +152,91 @@ class Rewriter:
                 new_lines.append(line)
         self.new_code = "\n".join(new_lines)
 
+    def join_multiline_assertions(self):
+        """Join multi-line assertions (assert/assume) into single lines.
+        
+        This method processes the code to find assertions that span multiple lines
+        and joins them into a single line. Also splits any content after the semicolon
+        (like closing braces) onto a separate line.
+        
+        Note: __VERIFIER_assert should already be replaced with assert by this point.
+        """
+        lines = self.new_code.split("\n")
+        new_lines = []
+        i = 0
+        
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.strip()
+            
+            # Check if this line starts an assertion
+            if not (stripped.startswith("assert(") or stripped.startswith("assume(")):
+                new_lines.append(line)
+                i += 1
+                continue
+            
+            # Found an assertion - join it until we find the closing paren and semicolon
+            paren_count = 0
+            joined_line = line  # Preserve indentation
+            found_semicolon = False
+            
+            # Count parentheses in the first line
+            for char in stripped:
+                if char == '(':
+                    paren_count += 1
+                elif char == ')':
+                    paren_count -= 1
+                elif char == ';' and paren_count == 0:
+                    found_semicolon = True
+                    break
+            
+            # Continue joining lines until we find the semicolon
+            i += 1
+            while i < len(lines) and not found_semicolon:
+                current_line = lines[i]
+                current_stripped = current_line.strip()
+                
+                # Skip empty lines
+                if not current_stripped:
+                    i += 1
+                    continue
+                
+                # Stop if we hit a new statement
+                if current_stripped.startswith(('if ', 'while ', 'for ', 'return ', 'break', 'continue', '}')):
+                    break
+                
+                # Join the line
+                joined_line += " " + current_stripped
+                
+                # Count parentheses and check for semicolon
+                for char in current_stripped:
+                    if char == '(':
+                        paren_count += 1
+                    elif char == ')':
+                        paren_count -= 1
+                    elif char == ';' and paren_count == 0:
+                        found_semicolon = True
+                        break
+                
+                i += 1
+            
+            # Split content after semicolon if present
+            if found_semicolon:
+                semicolon_idx = joined_line.find(';')
+                if semicolon_idx != -1:
+                    assertion_part = joined_line[:semicolon_idx + 1]
+                    remaining_part = joined_line[semicolon_idx + 1:].strip()
+                    
+                    new_lines.append(assertion_part)
+                    if remaining_part:
+                        new_lines.append(remaining_part)
+                else:
+                    new_lines.append(joined_line)
+            else:
+                new_lines.append(joined_line)
+        
+        self.new_code = "\n".join(new_lines)
+
 
     def remove_comments(self, with_gcc: bool = True) -> str:
         """ Remove C comments using gcc preprocessor and filter output."""
@@ -195,14 +260,6 @@ class Rewriter:
             else:
                 new_lines.append(line)
         self.new_code = "\n".join(new_lines)
-        # Filter out preprocessor directives and comments
-        # Remove single-line comments that start with // and not followed by GT
-        # Use negative lookahead to preserve // GT comments
-        # self.new_code = re.sub(r'//(?! GT).*$', '', self.new_code, flags=re.MULTILINE)
-        # # Remove multi-line comments
-        # self.new_code = re.sub(r'/\*.*?\*/', '', self.new_code, flags=re.DOTALL)
-        # # Remove preprocessor directives (lines starting with #)
-        # self.new_code = re.sub(r'^#.*$', '', self.new_code, flags=re.MULTILINE)
         return self.new_code
 
     def replace_reach_error_with_assertion(self):

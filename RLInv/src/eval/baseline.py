@@ -7,269 +7,33 @@ on each problem, measures timing, and outputs results in JSON format.
 """
 
 import argparse
+import csv
 import json
 import os
-import platform
-import re
-import subprocess
+import shutil
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 from tqdm import tqdm
-# Add the project root to Python path for imports
-# project_root = Path(__file__).parent.parent.parent
-# sys.path.insert(0, str(project_root))
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 from src.utils.plain_verifier import run_uautomizer
 from src.utils.task import Task
+from src.utils.utils import load_yaml_file
+from src.utils.baseline_utils import get_verifier_version, get_system_info, get_runtime_configuration, detect_z3_memory_limit, detect_slurm_resources, detect_java_heap_size
 
+root_dir = Path("/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv")
 
-def get_uautomizer_version(uautomizer_path: str) -> Dict[str, str]:
-    """Get UAutomizer version using both --ultversion and --version flags."""
-    versions = {}
-    
-    # Try --ultversion first
-    try:
-        result = subprocess.run(
-            [sys.executable, uautomizer_path, '--ultversion'],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        # Check both stdout and stderr (version info might be in either)
-        output = (result.stdout + result.stderr).strip()
-        if output:
-            # Extract just the version line if multiple lines present
-            lines = output.split('\n')
-            # Look for line starting with "Version is"
-            for line in lines:
-                if 'Version is' in line:
-                    versions['ultversion'] = line.strip()
-                    break
-            else:
-                # If no "Version is" line, use first non-empty line
-                versions['ultversion'] = lines[0] if lines else output
-        else:
-            versions['ultversion'] = "unknown"
-    except Exception as e:
-        versions['ultversion'] = f"unknown ({str(e)})"
-    
-    # Try --version
-    try:
-        result = subprocess.run(
-            [sys.executable, uautomizer_path, '--version'],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        # Check both stdout and stderr (version info might be in either)
-        output = (result.stdout + result.stderr).strip()
-        if output:
-            # Usually just a commit hash or version string
-            versions['version'] = output.split('\n')[0].strip()
-        else:
-            versions['version'] = "unknown"
-    except Exception as e:
-        versions['version'] = f"unknown ({str(e)})"
-    
-    return versions
-
-def get_system_info() -> Dict[str, str]:
-    """Get system hardware information."""
-    try:
-        # Get CPU info - matters for timing reproducibility
-        cpu_info = "unknown"
-        try:
-            with open('/proc/cpuinfo', 'r') as f:
-                for line in f:
-                    if line.startswith('model name'):
-                        cpu_info = line.split(':')[1].strip()
-                        break
-        except (FileNotFoundError, PermissionError):
-            pass
-        
-        # Get SLURM node name if available
-        slurm_node = os.environ.get('SLURM_NODELIST') or os.environ.get('SLURMD_NODENAME')
-        
-        system_info = {
-            "architecture": platform.machine(),
-            "cpu": cpu_info,
-            "python_version": platform.python_version()
-        }
-        
-        if slurm_node:
-            system_info["slurm_node"] = slurm_node
-        
-        return system_info
-    except Exception:
-        return {
-            "architecture": platform.machine(),
-            "cpu": "unknown",
-            "python_version": platform.python_version()
-        }
-
-def detect_slurm_resources() -> Dict[str, int]:
-    """Detect SLURM resource allocation from environment variables."""
-    resources = {}
-    
-    # SLURM CPUs
-    if 'SLURM_CPUS_PER_TASK' in os.environ:
-        try:
-            resources['slurm_cpus_per_task'] = int(os.environ['SLURM_CPUS_PER_TASK'])
-        except (ValueError, TypeError):
-            pass
-    elif 'SLURM_CPUS_ON_NODE' in os.environ:
-        try:
-            resources['slurm_cpus_per_task'] = int(os.environ['SLURM_CPUS_ON_NODE'])
-        except (ValueError, TypeError):
-            pass
-    
-    # SLURM Memory (can be in MB or GB, need to parse)
-    if 'SLURM_MEM_PER_NODE' in os.environ:
-        try:
-            mem_mb = int(os.environ['SLURM_MEM_PER_NODE'])
-            resources['slurm_memory_gb'] = mem_mb // 1024  # Convert MB to GB
-        except (ValueError, TypeError):
-            pass
-    elif 'SLURM_MEM_PER_CPU' in os.environ:
-        try:
-            mem_mb_per_cpu = int(os.environ['SLURM_MEM_PER_CPU'])
-            cpus = resources.get('slurm_cpus_per_task', 1)
-            resources['slurm_memory_gb'] = (mem_mb_per_cpu * cpus) // 1024
-        except (ValueError, TypeError):
-            pass
-    
-    # SLURM Time limit (format: "HH:MM:SS" or seconds as string, or "UNLIMITED")
-    if 'SLURM_TIME_LIMIT' in os.environ:
-        time_str = os.environ['SLURM_TIME_LIMIT']
-        try:
-            # Skip if unlimited
-            if time_str.upper() == 'UNLIMITED':
-                pass
-            # Try parsing as seconds first
-            elif ':' not in time_str:
-                seconds = int(time_str)
-                if seconds > 0:
-                    resources['slurm_timeout_hours'] = seconds // 3600
-            else:
-                # Parse HH:MM:SS format
-                parts = time_str.split(':')
-                if len(parts) == 3:
-                    hours = int(parts[0])
-                    minutes = int(parts[1])
-                    seconds = int(parts[2])
-                    total_hours = hours + minutes / 60 + seconds / 3600
-                    if total_hours > 0:
-                        resources['slurm_timeout_hours'] = int(total_hours) if total_hours < 1 else round(total_hours, 1)
-        except (ValueError, TypeError, IndexError):
-            pass
-    
-    return resources
-
-def detect_java_heap_size(uautomizer_path: str) -> Optional[int]:
-    """Detect Java heap size from UAutomizer script or environment."""
-    # Check _JAVA_OPTIONS environment variable first
-    if '_JAVA_OPTIONS' in os.environ:
-        java_opts = os.environ['_JAVA_OPTIONS']
-        # Look for -Xmx pattern (e.g., -Xmx15G, -Xmx12288M)
-        match = re.search(r'-Xmx(\d+)([GMK])', java_opts)
-        if match:
-            value = int(match.group(1))
-            unit = match.group(2)
-            if unit == 'G':
-                return value
-            elif unit == 'M':
-                return value // 1024  # Convert MB to GB
-            elif unit == 'K':
-                return value // (1024 * 1024)
-    
-    # Try to parse from Ultimate.py file
-    try:
-        uautomizer_file = Path(uautomizer_path)
-        if uautomizer_file.exists():
-            with open(uautomizer_file, 'r') as f:
-                content = f.read()
-                # Look for -Xmx pattern in the script
-                match = re.search(r'-Xmx(\d+)([GMK])', content)
-                if match:
-                    value = int(match.group(1))
-                    unit = match.group(2)
-                    if unit == 'G':
-                        return value
-                    elif unit == 'M':
-                        return value // 1024
-                    elif unit == 'K':
-                        return value // (1024 * 1024)
-    except Exception:
-        pass
-    
-    return None
-
-def detect_z3_memory_limit(uautomizer_path: str) -> Optional[int]:
-    """Detect Z3 memory limit from UAutomizer configuration."""
-    # Z3 memory limit can be set in multiple places:
-    # 1. Ultimate.py script (as -memory: parameter)
-    # 2. Config XML files (in tools/uautomizer/config/)
-    # 3. Environment variables
-    
-    # First, check Ultimate.py script
-    try:
-        uautomizer_file = Path(uautomizer_path)
-        if uautomizer_file.exists():
-            with open(uautomizer_file, 'r') as f:
-                content = f.read()
-                # Look for -memory: pattern (e.g., -memory:12288)
-                match = re.search(r'-memory:(\d+)', content)
-                if match:
-                    return int(match.group(1))
-    except Exception:
-        pass
-    
-    # Check config XML files
-    try:
-        uautomizer_dir = Path(uautomizer_path).parent
-        config_dir = uautomizer_dir / "config"
-        if config_dir.exists():
-            for config_file in config_dir.glob("*.xml"):
-                try:
-                    with open(config_file, 'r') as f:
-                        content = f.read()
-                        # Look for memory settings in XML (could be various formats)
-                        # Common patterns: memory="12288", -memory:12288, memory:12288
-                        matches = re.findall(r'(?:memory=|memory:|-memory:)"?(\d+)"?', content, re.IGNORECASE)
-                        for match in matches:
-                            mem_val = int(match)
-                            # Z3 memory is typically in MB, values like 2024, 12288 are common
-                            if mem_val >= 1000:  # Reasonable Z3 memory limit (at least 1GB)
-                                return mem_val
-                except Exception:
-                    continue
-    except Exception:
-        pass
-    
-    return None
-
-def get_runtime_configuration(uautomizer_path: str) -> Dict[str, Any]:
-    """Get runtime configuration values dynamically."""
-    config = {}
-    
-    # Detect SLURM resources
-    slurm_resources = detect_slurm_resources()
-    config.update(slurm_resources)
-    
-    # Detect Java heap size
-    java_heap = detect_java_heap_size(uautomizer_path)
-    if java_heap is not None:
-        config['uautomizer_java_heap_max_gb'] = java_heap
-    
-    # Detect Z3 memory limit
-    z3_memory = detect_z3_memory_limit(uautomizer_path)
-    if z3_memory is not None:
-        config['z3_memory_limit_mb'] = z3_memory
-    
-    return config
-
+verifier_executable_paths = {
+    "uautomizer23": root_dir / "tools" / "UAutomizer23" / "Ultimate.py",
+    "uautomizer24": root_dir / "tools" / "UAutomizer24" / "Ultimate.py",
+    "uautomizer25": root_dir / "tools" / "UAutomizer25" / "Ultimate.py",
+    "uautomizer26": root_dir / "tools" / "UAutomizer26" / "Ultimate.py"
+}
 def find_problem_files(evaluation_dir: Path) -> List[Path]:
     """
     Find all yml files in the evaluation directory.
@@ -293,7 +57,6 @@ def find_problem_files(evaluation_dir: Path) -> List[Path]:
 def process_problem(
     yml_file: Path,
     uautomizer_path: Path,
-    properties_dir: Path,
     timeout_seconds: int = 300
 ) -> Dict[str, Any]:
     """Process a single problem and return results."""
@@ -303,8 +66,8 @@ def process_problem(
         
         report = run_uautomizer(
             uautomizer_path=uautomizer_path,
-            c_file_path=str(task.source_code_path),
-            property_file_path=str(properties_dir / task.property_path),
+            program_path=str(task.source_code_path),
+            property_file_path=str(task.property_path),
             reports_dir=Path("/tmp"),
             arch=task.arch,
             timeout_seconds=timeout_seconds
@@ -316,18 +79,16 @@ def process_problem(
             "result": report.decision
         }
     except Exception as e:
-        print(f"Error creating Task for {yml_file}: {e}")
+        error_msg = str(e)
+        print(f"Error processing {yml_file}: {error_msg}")
+        import traceback
+        traceback.print_exc()
         return {
             "file": yml_file.stem,
             "time": 0.0,
-            "result": "ERROR"
+            "result": "ERROR",
+            "error_message": error_msg
         }
-        # return {
-        #     "base_filename": yml_file.stem,
-        #     "decision": "Error",
-        #     "baseline_timing": 0.0,
-        #     "error_message": str(e)
-        # }
 
 
 def main():
@@ -336,18 +97,14 @@ def main():
     )
     parser.add_argument(
         "evaluation_folder",
-        help="Path to evaluation folder (e.g., evaluation/easy)"
+        help="Path to evaluation folder (e.g., evaluation/full)"
     )
     parser.add_argument(
-        "--uautomizer-path",
-        default="/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/tools/uautomizer/Ultimate.py",
-        help="Path to UAutomizer executable"
+        "--uautomizer_version",
+        default="uautomizer23",
+        help="UAutomizer version (e.g., uautomizer23, uautomizer24, uautomizer25, uautomizer26)"
     )
-    parser.add_argument(
-        "--properties-dir",
-        default="/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/dataset/properties",
-        help="Path to properties directory"
-    )
+
     parser.add_argument(
         "--output-dir",
         default=None,
@@ -359,42 +116,45 @@ def main():
         default=600,
         help="Timeout in seconds for each verification"
     )
+    parser.add_argument(
+        "--do-split",
+        action="store_true",
+        help="Split full dataset into easy, hard, and unknowns after processing (only works when evaluation folder is 'full')"
+    )
     
     args = parser.parse_args()
     
     # Convert to Path objects
     evaluation_dir = Path(args.evaluation_folder)
-    uautomizer_path = args.uautomizer_path
-    properties_dir = Path(args.properties_dir)
+    verifier_executable_path = verifier_executable_paths[args.uautomizer_version]
     
     # Validate paths
     if not evaluation_dir.exists():
         print(f"Error: Evaluation directory not found: {evaluation_dir}")
         sys.exit(1)
     
-    if not os.path.exists(uautomizer_path):
-        print(f"Error: UAutomizer not found: {uautomizer_path}")
+    if not os.path.exists(verifier_executable_path):
+        print(f"Error: UAutomizer not found: {verifier_executable_path}")
         sys.exit(1)
     
-    if not properties_dir.exists():
-        print(f"Error: Properties directory not found: {properties_dir}")
-        sys.exit(1)
+    # Extract version number from uautomizer_version (e.g., "uautomizer23" -> "23")
+    version_number = args.uautomizer_version.replace("uautomizer", "")
     
     # Use explicit output_dir if provided, otherwise save directly to evaluation directory
     if args.output_dir:
         output_dir = Path(args.output_dir)
         evaluation_folder_name = evaluation_dir.name
-        output_dir = output_dir / evaluation_folder_name
+        output_dir = output_dir / evaluation_folder_name / version_number
     else:
-        output_dir = evaluation_dir
+        output_dir = evaluation_dir / version_number
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Get metadata
-    uautomizer_versions = get_uautomizer_version(uautomizer_path)
+    verifier_versions = get_verifier_version(verifier_executable_path)
     system_info = get_system_info()
     
     # Detect runtime configuration dynamically
-    detected_config = get_runtime_configuration(uautomizer_path)
+    detected_config = get_runtime_configuration(verifier_executable_path)
     
     # Build configuration: use detected values only
     configuration = {
@@ -404,8 +164,9 @@ def main():
         "slurm_memory_gb": detected_config.get('slurm_memory_gb')
     }
     
-    print(f"UAutomizer --ultversion: {uautomizer_versions.get('ultversion', 'unknown')}")
-    print(f"UAutomizer --version: {uautomizer_versions.get('version', 'unknown')}")
+    print(f"UAutomizer version: {args.uautomizer_version} (saving to: {output_dir})")
+    print(f"UAutomizer --ultversion: {verifier_versions.get('ultversion', 'unknown')}")
+    print(f"UAutomizer --version: {verifier_versions.get('version', 'unknown')}")
     print(f"System info: {system_info}")
     print(f"Detected configuration: {detected_config}")
     
@@ -425,19 +186,13 @@ def main():
     results = []
     start_time = time.time()
     
-    # Create results file and write initial empty array
-    results_file = output_dir / "baseline_timing.json"
-    with open(results_file, 'w') as f:
-        json.dump([], f)
-    
-    for i, yml_file in tqdm(enumerate(problems, 1), total=len(problems), desc="Processing problems"):
+    for yml_file in tqdm(problems, total=len(problems), desc="Processing problems"):
         # print(f"\n[{i}/{len(problems)}] Processing {yml_file.name}")
         
         try:
             result = process_problem(
                 yml_file=yml_file,
-                uautomizer_path=uautomizer_path,
-                properties_dir=properties_dir,
+                uautomizer_path=verifier_executable_path,
                 timeout_seconds=args.timeout
             )
             results.append(result)
@@ -447,24 +202,20 @@ def main():
             
         except Exception as e:
             print(f"  Error processing {yml_file.name}: {e}")
-            # Add error result
+            # Add error result (using same keys as normal result)
             error_result = {
-                "base_filename": yml_file.stem,
-                "decision": "Error",
-                "baseline_timing": 0.0,
+                "file": yml_file.stem,
+                "time": 0.0,
+                "result": "ERROR",
                 "error_message": str(e)
             }
             results.append(error_result)
         
-        # Write results incrementally after each problem
-        with open(results_file, 'w') as f:
-            json.dump(results, f, indent=2)
-    
     total_time = time.time() - start_time
     
     # Create metadata
     metadata = {
-        "uautomizer_versions": uautomizer_versions,
+        "verifier_versions": verifier_versions,
         "system_info": system_info,
         "configuration": configuration,
         "total_problems": len(problems),
@@ -475,7 +226,7 @@ def main():
     }
     
     # Save metadata separately
-    metadata_file = output_dir / "baseline_metadata.json"
+    metadata_file = output_dir / f"baseline_metadata{version_number}.json"
     try:
         with open(metadata_file, 'w') as f:
             json.dump(metadata, f, indent=2)
@@ -484,13 +235,30 @@ def main():
         print(f"\nERROR: Failed to save metadata to {metadata_file}: {e}")
         raise
     
+    # Save results as CSV with version number
+    csv_file = output_dir / f"baseline_timing{version_number}.csv"
+    try:
+        with open(csv_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            # Write header
+            writer.writerow(['file', 'result', 'time'])
+            # Write data rows
+            for row in results:
+                writer.writerow([
+                    row.get('file', ''),
+                    row.get('result', ''),
+                    row.get('time', 0)
+                ])
+        print(f"CSV results saved to: {csv_file}")
+    except Exception as e:
+        print(f"\nWARNING: Failed to save CSV to {csv_file}: {e}")
+    
     print("\n=== Baseline Complete ===")
     print(f"Processed {len(problems)} problems in {total_time:.2f}s")
-    print(f"Results saved to: {results_file}")
     print(f"Metadata saved to: {metadata_file}")
     
     # Summary statistics
-    decisions = [r["decision"] for r in results]
+    decisions = [r["result"] for r in results]
     decision_counts = {}
     for decision in decisions:
         decision_counts[decision] = decision_counts.get(decision, 0) + 1
@@ -498,6 +266,234 @@ def main():
     print("\nDecision summary:")
     for decision, count in decision_counts.items():
         print(f"  {decision}: {count}")
+    
+    # Split full dataset into easy, hard, and unknowns if evaluation folder is 'full' and flag is set
+    if evaluation_dir.name == "full" and args.do_split:
+        split_full_to_easy_hard_unknowns(
+            evaluation_dir=evaluation_dir,
+            results=results,
+            output_dir=output_dir
+        )
+    
+    # Generate plots for full dataset and splits
+    if evaluation_dir.name == "full":
+        generate_timing_plots(
+            results=results,
+            output_dir=output_dir,
+            timeout_seconds=args.timeout
+        )
+
+
+def split_full_to_easy_hard_unknowns(
+    evaluation_dir: Path,
+    results: List[Dict[str, Any]],
+    output_dir: Path
+) -> None:
+    """
+    Split full dataset into easy, hard, and unknowns based on baseline timing.
+    Easy: timing <= 30 seconds and result is TRUE or FALSE
+    Hard: timing > 30 seconds and result is TRUE or FALSE
+    Unknowns: result is UNKNOWN, ERROR, or timeout
+    
+    Splits are saved inside the output_dir (e.g., output_dir/easy, output_dir/hard, output_dir/unknowns).
+    """
+    print("\n=== Splitting full dataset into easy, hard, and unknowns ===")
+    
+    # Paths - save splits inside the version directory (e.g., full/23/easy, full/23/hard, full/23/unknowns)
+    easy_dir = output_dir / "easy"
+    hard_dir = output_dir / "hard"
+    unknowns_dir = output_dir / "unknowns"
+    
+    # Create output directories
+    for dest_dir in [easy_dir, hard_dir, unknowns_dir]:
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        (dest_dir / "c").mkdir(exist_ok=True)
+        (dest_dir / "yml").mkdir(exist_ok=True)
+    
+    # Create lookup: filename -> (timing, result)
+    timing_lookup = {}
+    for r in results:
+        filename = r.get("file", "")
+        timing = r.get("time", 0.0)
+        result = r.get("result", "UNKNOWN")
+        timing_lookup[filename] = (timing, result)
+    
+    # Split by timing and result
+    easy_files = []
+    hard_files = []
+    unknown_files = []
+    
+    for filename, (timing, result) in timing_lookup.items():
+        # Unknowns: UNKNOWN, ERROR, or timeout
+        if result in ["UNKNOWN", "ERROR"] or timing <= 0:
+            unknown_files.append(filename)
+        elif timing <= 30:
+            easy_files.append(filename)
+        else:
+            hard_files.append(filename)
+    
+    # Copy files function
+    def copy_files(base_filenames, dest_dir):
+        for base_filename in base_filenames:
+            src_yml = evaluation_dir / "yml" / f"{base_filename}.yml"
+            if not src_yml.exists():
+                print(f"Warning: YML file not found: {src_yml}")
+                continue
+            
+            # Get actual C filename from yml
+            try:
+                yml_data = load_yaml_file(src_yml)
+                c_filename = yml_data.get("input_files", f"{base_filename}.c")
+                if isinstance(c_filename, list):
+                    c_filename = c_filename[0] if c_filename else f"{base_filename}.c"
+            except Exception:
+                c_filename = f"{base_filename}.c"
+            
+            src_c = evaluation_dir / "c" / c_filename
+            dst_c = dest_dir / "c" / c_filename
+            dst_yml = dest_dir / "yml" / f"{base_filename}.yml"
+            
+            if src_c.exists():
+                shutil.copy2(src_c, dst_c)
+            else:
+                print(f"Warning: C file not found: {src_c}")
+            
+            shutil.copy2(src_yml, dst_yml)
+    
+    # Copy files to respective directories
+    copy_files(easy_files, easy_dir)
+    copy_files(hard_files, hard_dir)
+    copy_files(unknown_files, unknowns_dir)
+    
+    print(f"Easy: {len(easy_files)} problems (timing <= 30s, result: TRUE/FALSE)")
+    print(f"Hard: {len(hard_files)} problems (timing > 30s, result: TRUE/FALSE)")
+    print(f"Unknowns: {len(unknown_files)} problems (UNKNOWN/ERROR/timeout)")
+    print("\nSplit complete! Files saved to:")
+    print(f"  - {easy_dir}")
+    print(f"  - {hard_dir}")
+    print(f"  - {unknowns_dir}")
+
+
+def plot_timing_distribution(results: List[Dict[str, Any]], title: str, output_path: Path, timeout_seconds: int = 600) -> None:
+    """
+    Plot timing distribution similar to timing_comparison.ipynb.
+    
+    Args:
+        results: List of result dictionaries with 'file', 'result', 'time' keys
+        title: Title for the plot
+        output_path: Path to save the plot
+        timeout_seconds: Timeout value for the title
+    """
+    # Convert results to list of times
+    times = [r.get('time', 0.0) for r in results]
+    
+    if not times:
+        print(f"Warning: No data to plot for {title}")
+        return
+    
+    # Count number of UNKNOWN in result column
+    num_unknown = sum(1 for r in results if r.get('result', '') == 'UNKNOWN')
+    
+    # Only consider rows that are not UNKNOWN for easy/hard
+    non_unknown = [r for r in results if r.get('result', '') != 'UNKNOWN']
+    
+    # Easy: time <= 30 and result != UNKNOWN
+    num_easy = sum(1 for r in non_unknown if r.get('time', 0.0) <= 30)
+    # Hard: time > 30 and result != UNKNOWN
+    num_hard = sum(1 for r in non_unknown if r.get('time', 0.0) > 30)
+    
+    # Count number of duplicate rows (by file name)
+    files = [r.get('file', '') for r in results]
+    num_duplicates = len(files) - len(set(files))
+    
+    # Compute statistics
+    time_min = min(times)
+    time_max = max(times)
+    time_mean = sum(times) / len(times)
+    sorted_times = sorted(times)
+    time_median = sorted_times[len(sorted_times) // 2] if sorted_times else 0.0
+    
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist(times, bins=50, color='skyblue', edgecolor='black', label=None)
+    plt.axvline(30, color='red', linestyle='--', linewidth=2, label='30 seconds')
+    
+    plot_title = (
+        f'{title} ({len(results)} samples), Timeout: {timeout_seconds}\n'
+        f'Easy (≤30s): {num_easy} | Hard (>30s): {num_hard} | Duplicates: {num_duplicates}'
+    )
+    if num_unknown > 0:
+        plot_title += f' | Unknowns: {num_unknown}'
+    plt.title(plot_title)
+    plt.xlabel('Time')
+    plt.ylabel('Frequency')
+    plt.grid(axis='y')
+    
+    # First legend: threshold line (upper left)
+    legend1 = plt.legend(loc='upper left')
+    
+    # Second legend: statistics (move to the right: upper right)
+    stats_legend_text = (
+        f"min = {time_min:.2f}\n"
+        f"max = {time_max:.2f}\n"
+        f"mean = {time_mean:.2f}\n"
+        f"median = {time_median:.2f}"
+    )
+    dummy_patch = mpatches.Patch(color='none', label=stats_legend_text)
+    plt.legend(handles=[dummy_patch], loc='upper right', title='Statistics')
+    plt.gca().add_artist(legend1)
+    
+    # Save the plot
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"Plot saved to: {output_path}")
+
+
+def generate_timing_plots(
+    results: List[Dict[str, Any]],
+    output_dir: Path,
+    timeout_seconds: int = 600
+) -> None:
+    """
+    Generate timing distribution plots for full, easy, hard, and unknown splits.
+    
+    Args:
+        results: List of result dictionaries
+        output_dir: Directory to save plots (e.g., full/23)
+        timeout_seconds: Timeout value for plots
+    """
+    print("\n=== Generating timing distribution plots ===")
+    
+    # Create plots directory
+    plots_dir = output_dir / "plots"
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Plot for full dataset
+    full_plot_path = plots_dir / "full_distribution.png"
+    plot_timing_distribution(results, "Full Dataset", full_plot_path, timeout_seconds)
+    
+    # Split results into easy, hard, and unknown
+    non_unknown = [r for r in results if r.get('result', '') not in ['UNKNOWN', 'ERROR'] and r.get('time', 0.0) > 0]
+    easy_results = [r for r in non_unknown if r.get('time', 0.0) <= 30]
+    hard_results = [r for r in non_unknown if r.get('time', 0.0) > 30]
+    unknown_results = [r for r in results if r.get('result', '') in ['UNKNOWN', 'ERROR'] or r.get('time', 0.0) <= 0]
+    
+    # Plot for easy split
+    if easy_results:
+        easy_plot_path = plots_dir / "easy_distribution.png"
+        plot_timing_distribution(easy_results, "Easy Split (≤30s)", easy_plot_path, timeout_seconds)
+    
+    # Plot for hard split
+    if hard_results:
+        hard_plot_path = plots_dir / "hard_distribution.png"
+        plot_timing_distribution(hard_results, "Hard Split (>30s)", hard_plot_path, timeout_seconds)
+    
+    # Plot for unknown split
+    if unknown_results:
+        unknown_plot_path = plots_dir / "unknown_distribution.png"
+        plot_timing_distribution(unknown_results, "Unknown Split", unknown_plot_path, timeout_seconds)
+    
+    print(f"Plots saved to: {plots_dir}")
 
 
 if __name__ == "__main__":

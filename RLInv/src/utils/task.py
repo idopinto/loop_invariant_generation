@@ -1,16 +1,11 @@
-import sys
 from pathlib import Path
-
-# Add the project root to Python path for imports
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+# # Add the project root to Python path for imports
+# project_root = Path(__file__).parent.parent.parent
+# sys.path.insert(0, str(project_root))
+# sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from src.utils.utils import load_yaml_file
 
-root_dir = project_root
+root_dir = Path(__file__).parent.parent.parent
 properties_dir = root_dir / "dataset" / "properties"
 
 class Task:

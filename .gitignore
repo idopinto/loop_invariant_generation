@@ -3,7 +3,12 @@ Lemur-program-verification/
 .venv
 slurm/
 tools/
+dataset/
 experiments/
+docs/
+wandb/
+gpt-oss-20b-multilingual-reasoner/
+
 .DS_Store
 __pycache__/
 .pytest_cache/
