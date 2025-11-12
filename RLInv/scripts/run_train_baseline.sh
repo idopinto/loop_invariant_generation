@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=capture_training
-#SBATCH --output=slurm/capture_training_%j.out
-#SBATCH --error=slurm/capture_training_%j.err
-#SBATCH --time=24:00:00
+#SBATCH --job-name=train_baseline
+#SBATCH --output=slurm/train_baseline_%j.out
+#SBATCH --error=slurm/train_baseline_%j.err
+#SBATCH --time=4-00:00:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=16G
 
-# Script to run capture_training_baseline.py on training/clean dataset
-# Usage: sbatch scripts/run_capture_training_baseline.sh [version] [timeout] [limit]
-# Usage: ./scripts/run_capture_training_baseline.sh [version] [timeout] [limit]
+# Script to run train_baseline_with_gt_invariants.py on training/orig_programs dataset
+# Usage: sbatch scripts/run_train_baseline.sh [version] [timeout] [limit]
+# Usage: ./scripts/run_train_baseline.sh [version] [timeout] [limit]
 #   version: 23, 24, 25, or 26 (default: 25)
 #   timeout: Timeout in seconds per file (default: 600)
 #   limit: Limit number of files to process for testing (optional)
@@ -50,7 +50,7 @@ which python
 python --version
 
 # Run capture training baseline script
-echo "Starting training baseline capture..."
+echo "Starting training baseline..."
 echo "UAutomizer version: $VERSION"
 echo "Timeout per file: $TIMEOUT seconds"
 if [ -n "$LIMIT" ]; then
@@ -65,21 +65,21 @@ echo "  Time limit: $SLURM_TIME_LIMIT"
 echo ""
 
 # Build command
-CAPTURE_CMD="uv run scripts/capture_training_baseline.py --version $VERSION --timeout $TIMEOUT"
+TRAIN_CMD="uv run src/utils/train_baseline_with_gt_invariants.py --uautomizer_version $VERSION --timeout $TIMEOUT"
 
 # Add limit if specified
 if [ -n "$LIMIT" ]; then
-    CAPTURE_CMD="$CAPTURE_CMD --limit $LIMIT"
+    TRAIN_CMD="$TRAIN_CMD --limit $LIMIT"
 fi
 
 # Run the command
-$CAPTURE_CMD
+$TRAIN_CMD
 
 echo ""
-echo "Training baseline capture completed!"
+echo "Training baseline completed!"
 echo "End time: $(date)"
 echo ""
-echo "Results saved in: dataset/training/clean/$VERSION/"
-echo "  - baseline.json"
-echo "  - reports/"
+echo "Results saved in: dataset/training/uautomizer$VERSION_train/"
+echo "  - uautomizer$VERSION_train.json"
+echo "  - uautomizer$VERSION_train_bad_files.json"
 

@@ -6,15 +6,13 @@ This script:
 1. Processes all .c files in dataset/training/programs (or specified directory)
 2. Runs UAutomizer on each file with specified version (23, 24, 25, 26)
 3. Captures timing information and attempts to extract invariants from witness files
-4. Supports parallel processing for faster execution
-5. Saves unified results to uautomizer{version}_train.json (contains both timing and invariants)
+4. Saves unified results to uautomizer{version}_train.json (contains both timing and invariants)
 
 Command-line arguments:
     --uautomizer_version: UAutomizer version to use (23, 24, 25, or 26) [required]
     --timeout: Timeout in seconds for each verification (default: 600)
     --data_dir: Directory containing C files to process (default: dataset/training/programs)
     --limit: Limit the number of files to process (useful for testing)
-    --workers: Number of parallel workers to use (default: 1, sequential processing)
 
 The unified format is an array of objects, each containing:
 {
@@ -36,14 +34,16 @@ import json
 import yaml
 import sys
 import time
-import os
+import shutil
 from pathlib import Path
 from typing import Dict, List, Any, Tuple
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 
 from src.utils.plain_verifier import run_uautomizer  
-root_dir = Path(__file__).parent.parent
+from src.utils.rewriter import Rewriter
+from src.utils.program import Program
+from pycparser import c_parser
+root_dir = Path(__file__).parent.parent.parent
 verifier_executable_paths = {
     "23": root_dir / "tools" / "UAutomizer23" / "Ultimate.py",
     "24": root_dir / "tools" / "UAutomizer24" / "Ultimate.py",
@@ -89,6 +89,41 @@ def extract_invariants_from_witness(witness_yml: Path) -> List[Dict[str, Any]]:
         return []
 
 
+def check_correct_syntax(program_str: str) -> bool:
+    """
+    Check if the program has correct syntax.
+    """
+    parser = c_parser.CParser()
+    try:
+        parser.parse(program_str)
+        return True
+    except Exception:
+        return False
+    
+    
+def reformat(file_path: Path) -> Tuple[str, bool, bool]:
+    """
+    Reformat a C file with rewriter and checks if the file has target assertion and if the syntax is correct.
+    Returns:
+        Tuple[str, bool, bool]: The reformatted program string, True if the file has no target assertion, False if the syntax is incorrect.
+    """
+    r = Rewriter(file_path, rewrite=True)
+    program = Program(r.lines_to_verify, r.replacement)
+    no_target_assertion = False
+    bad_syntax = False
+    if len(program.assertions) == 0:
+        no_target_assertion = True
+        return "", no_target_assertion, bad_syntax
+    target_assert = program.assertions[0] # assuming there is only one assertion in the program
+    program_str= program.get_program_with_assertion(predicate=target_assert, 
+                                                    assumptions=[],
+                                                    assertion_points={},
+                                                        forGPT=False)
+    if not check_correct_syntax(program_str):
+        bad_syntax = True
+        return "", no_target_assertion, bad_syntax
+    return program_str, no_target_assertion, bad_syntax
+
 def process_file(
     c_file: Path,
     uautomizer_path: Path,
@@ -102,53 +137,60 @@ def process_file(
     Returns:
         Dictionary with timing and invariant information
     """
-    result = {
-        "file": c_file.name,
-        "time": 0.0,
-        "result": "UNKNOWN",
-        "invariants": []
-    }
-    
-    try:
-        # Run UAutomizer
-        report = run_uautomizer(
-            program_path=c_file,
-            property_file_path=property_path,
-            reports_dir=reports_dir,
-            arch='32bit', 
-            timeout_seconds=timeout_seconds,
-            uautomizer_path=uautomizer_path
-        )
+    # copy c_file to reports_dir
+    shutil.copy(c_file, reports_dir / f"base_{c_file.name}")
+    program_str, no_target_assertion, bad_syntax = reformat(c_file)
+    program_path = reports_dir / f"reformatted_{c_file.stem}.c"
+    no_invariants = False
+    with open(program_path, "w") as f:
+        f.write(program_str)
+    if not no_target_assertion and not bad_syntax:
+        result = {
+            "file": c_file.name,
+            "time": 0.0,
+            "result": "UNKNOWN",
+            "invariants": []
+        }
         
-        result["time"] = report.time_taken
-        result["result"] = report.decision
-        
-        if report.reports_dir:
-            witness_yml = Path(report.reports_dir) / f"{c_file.stem}_witness.yml"
-            invariants = extract_invariants_from_witness(witness_yml)
-            result["invariants"] = invariants
-        
-    except Exception as e:
-        print(f"Error processing {c_file.name}: {e}")
-        result["result"] = "ERROR"
-        result["error_message"] = str(e)
-    
-    return result
+        try:
+            # Run UAutomizer
+            # report1 = run_uautomizer(
+            #     program_path=c_file,
+            #     property_file_path=property_path,
+            #     reports_dir=reports_dir,
+            #     arch='32bit', 
+            #     timeout_seconds=timeout_seconds,
+            #     uautomizer_path=uautomizer_path
+            # )
+            # print(f"Report1: {report1.decision} {report1.time_taken}")
+            report = run_uautomizer(
+                program_path=program_path,
+                property_file_path=property_path,
+                reports_dir=reports_dir,
+                arch='32bit', 
+                timeout_seconds=timeout_seconds,
+                uautomizer_path=uautomizer_path
+            )
+            print(f"Report: {report.decision} {report.time_taken}")
+            
+            result["time"] = report.time_taken
+            result["result"] = report.decision
+            
+            if report.reports_dir:
+                witness_yml = Path(report.reports_dir) / f"reformatted_{c_file.stem}_witness.yml"
+                invariants = extract_invariants_from_witness(witness_yml)
+                result["invariants"] = invariants
+                if len(invariants) == 0:
+                    no_invariants = True
 
-
-def process_file_wrapper(args_tuple: Tuple[Path, Path, Path, Path, int]) -> Dict[str, Any]:
-    """
-    Wrapper function for parallel processing.
-    Takes a tuple of arguments to make it pickleable for ProcessPoolExecutor.
-    """
-    c_file, uautomizer_path, property_path, reports_dir, timeout_seconds = args_tuple
-    return process_file(
-        c_file=c_file,
-        uautomizer_path=uautomizer_path,
-        property_path=property_path,
-        reports_dir=reports_dir,
-        timeout_seconds=timeout_seconds,
-    )
+        except Exception as e:
+            print(f"Error processing {c_file.name}: {e}")
+            result["result"] = "ERROR"
+            result["error_message"] = str(e)
+        
+        return result, no_target_assertion, bad_syntax, no_invariants
+    else:
+        return None, no_target_assertion, bad_syntax, no_invariants
 
 
 def main():
@@ -171,8 +213,8 @@ def main():
     parser.add_argument(
         "--data_dir",
         type=Path,
-        default=root_dir / "dataset" / "training" / "programs",
-        help="Directory containing C files to be pre-processed (default: dataset/training/programs)"
+        default=root_dir / "dataset" / "training" / "orig_programs",
+        help="Directory containing C files to be pre-processed (default: dataset/training/orig_programs)"
     )
     parser.add_argument(
         "--limit",
@@ -180,33 +222,15 @@ def main():
         default=None,
         help="Limit the number of files to process (useful for testing). Processes first k files."
     )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=1,
-        help="Number of parallel workers to use (default: 1, sequential processing). "
-             "Recommended: 1-2x CPU cores, but consider memory constraints."
-    )
     
     args = parser.parse_args()
     
-    # Validate workers argument
-    if args.workers < 1:
-        print(f"Error: --workers must be at least 1, got {args.workers}")
-        sys.exit(1)
-    
-    cpu_count = os.cpu_count() or 1
-    if args.workers > cpu_count * 2:
-        print(f"Warning: Using {args.workers} workers but only {cpu_count} CPU cores available.")
-        print(f"Consider using fewer workers (e.g., {cpu_count} or less) for better performance.")
-    elif args.workers > cpu_count:
-        print(f"Info: Using {args.workers} workers on {cpu_count} CPU cores. "
-              f"This may cause context switching overhead.")
-    
     # Set up paths
     data_dir = Path(args.data_dir)
+    print(f"Data directory: {data_dir}")
     # Find all C files
     c_files = list(data_dir.glob("*.c"))
+    print(f"Found {len(c_files)} C files to process")
     uautomizer_path = verifier_executable_paths[args.uautomizer_version]    
     if not c_files:
         print(f"Error: No C files found in {data_dir}")
@@ -226,34 +250,45 @@ def main():
     print(f"UAutomizer path: {uautomizer_path}")
     print(f"Property file: {property_file}")
     print(f"Timeout: {args.timeout} seconds")
-    if args.workers > 1:
-        print(f"Parallel workers: {args.workers}")
     output_dir = root_dir / "dataset" / "training" / f"uautomizer{args.uautomizer_version}_train"
+    
+    # # Check if output directory already exists
+    # if output_dir.exists():
+    #     print(f"Output directory already exists: {output_dir}")
+    #     print("Exiting without processing.")
+    #     sys.exit(0)
+    
     reports_dir = output_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Process files - unified format
-    results = []
+    c_files_to_process = [c_file for c_file in c_files if not (reports_dir / c_file.stem).exists()]
+    print(f"Found {len(c_files_to_process)} C files that have not been processed yet")
+    results_file_path = output_dir / f"uautomizer{args.uautomizer_version}_train.json"
+    if results_file_path.exists():
+        with open(results_file_path, "r") as f:
+            results = json.load(f)
+    else:
+        results = []
+        
+    bad_files_file_path = output_dir / f"uautomizer{args.uautomizer_version}_bad_files.json"
+    if bad_files_file_path.exists():
+        with open(bad_files_file_path, "r") as f:
+            bad_files = json.load(f)
+    else:
+        bad_files = {"no_target_assertion": [], "bad_syntax": [], "with_error": [], "no_invariants": []}
     start_time = time.time()
-    
-    # Prepare arguments for parallel processing
-    process_args = []
-    for c_file in c_files:
+    # Process files sequentially
+    for c_file in tqdm(c_files_to_process, desc="Processing files"):
         c_file_report_dir = reports_dir / c_file.stem
         c_file_report_dir.mkdir(parents=True, exist_ok=True)
-        process_args.append((
-            c_file,
-            uautomizer_path,
-            property_file,
-            c_file_report_dir,
-            args.timeout,
-        ))
-    
-    # Process files sequentially or in parallel
-    if args.workers == 1:
-        # Sequential processing
-        for args_tuple in tqdm(process_args, desc="Processing files"):
-            result = process_file_wrapper(args_tuple)
+        result, no_target_assertion, bad_syntax, no_invariants = process_file(
+            c_file=c_file,
+            uautomizer_path=uautomizer_path,
+            property_path=property_file,
+            reports_dir=c_file_report_dir,
+            timeout_seconds=args.timeout,
+        )
+        
+        if result:
             entry = {
                 "file": result["file"],
                 "time": result["time"],
@@ -262,41 +297,20 @@ def main():
             }
             if "error_message" in result:
                 entry["error_message"] = result["error_message"]
+                bad_files["with_error"].append(c_file.name)
+            if no_invariants:
+                bad_files["no_invariants"].append(c_file.name)
             results.append(entry)
-    else:
-        # Parallel processing
-        print(f"Using {args.workers} parallel workers")
-        with ProcessPoolExecutor(max_workers=args.workers) as executor:
-            # Submit all tasks
-            future_to_args = {
-                executor.submit(process_file_wrapper, args_tuple): args_tuple
-                for args_tuple in process_args
-            }
-            
-            # Process completed tasks with progress bar
-            for future in tqdm(as_completed(future_to_args), total=len(process_args), desc="Processing files"):
-                try:
-                    result = future.result()
-                    entry = {
-                        "file": result["file"],
-                        "time": result["time"],
-                        "result": result["result"],
-                        "invariants": result["invariants"]
-                    }
-                    if "error_message" in result:
-                        entry["error_message"] = result["error_message"]
-                    results.append(entry)
-                except Exception as e:
-                    args_tuple = future_to_args[future]
-                    c_file = args_tuple[0]
-                    print(f"Error processing {c_file.name}: {e}")
-                    results.append({
-                        "file": c_file.name,
-                        "time": 0.0,
-                        "result": "ERROR",
-                        "error_message": str(e),
-                        "invariants": []
-                    })
+            # save results to file
+            with open(results_file_path, "w") as f:
+                json.dump(results, f, indent=2)
+        if no_target_assertion:
+            bad_files["no_target_assertion"].append(c_file.name)
+        if bad_syntax:
+            bad_files["bad_syntax"].append(c_file.name)
+            # save bad files to file
+        with open(bad_files_file_path, "w") as f:
+            json.dump(bad_files, f, indent=2)
     
     total_time = time.time() - start_time
     
@@ -306,13 +320,22 @@ def main():
         json.dump(results, f, indent=2)
     print(f"\nResults saved to: {file_path}")
     
+    # Save bad files
+    bad_files_file_path = output_dir / f"uautomizer{args.uautomizer_version}_bad_files.json"
+    with open(bad_files_file_path, 'w') as f:
+        json.dump(bad_files, f, indent=2)
+    print(f"\nBad files saved to: {bad_files_file_path}")
+    
     # Summary statistics
     print("\n=== Summary ===")
     if args.limit is not None:
         print(f"Total files available: {total_files}")
         print(f"Files processed: {len(c_files)} (limited by --limit={args.limit})")
+        print(f"Bad files: {len(bad_files['no_target_assertion'])} no target assertion, {len(bad_files['bad_syntax'])} bad syntax")
     else:
-        print(f"Total files processed: {len(c_files)}")
+        print(f"Total files available: {total_files}")
+        print(f"Files processed: {len(c_files)}")
+        print(f"Bad files: {len(bad_files['no_target_assertion'])} no target assertion, {len(bad_files['bad_syntax'])} bad syntax")
     print(f"Total time: {total_time:.2f} seconds")
     print(f"Average time per file: {total_time/len(c_files):.2f} seconds")
 

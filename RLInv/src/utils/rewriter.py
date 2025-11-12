@@ -15,22 +15,37 @@ class Rewriter:
     def __init__(self, filename: Path, rewrite=True, handle_reach_error=False, remove_comments=True):
         """Initialize rewriter with C code from file."""
         self.code = filename.read_text().strip()
+        # print("--------------------------------")
+        # print(self.code)
+        # print("--------------------------------")
         self.new_code = self.code
 
         if rewrite:
             # Process code: remove comments, format, and replace verification functions
             self.remove_comments(with_gcc=True)
+            # print("---------------REMOVED COMMENTS----------------")
+            # print(self.new_code)
+            # print("--------------------------------")
             self.remove_re_pattern(r'__attribute__\s*\(\(.*?\)\)')
             self.remove_re_pattern(r'printf\s*\([^)]*\)\s*;')
+            # print("----------------REMOVED PATTERNS----------------")
+            # print(self.new_code)
+            # print("--------------------------------")
             # Remove verification functions
             self.remove_function("void reach_error")
+            # print("----------------REMOVED FUNCTIONS----------------")
+            # print(self.new_code)
+            # print("--------------------------------")
             self.remove_function("void __VERIFIER_assert")
+            # print("----------------REMOVED FUNCTIONS----------------")
+            # print(self.new_code)
+            # print("--------------------------------")
+            # Replace verification functions with standard equivalents
+            self.new_code = self.new_code.replace("__VERIFIER_assert", "assert")
             self.remove_function("void assert")
             self.remove_function("void assume_abort_if_not")
             self.remove_function("void assume")
             self.remove_externs()
-            # Replace verification functions with standard equivalents
-            self.new_code = self.new_code.replace("__VERIFIER_assert", "assert")
             self.new_code = self.new_code.replace("assume_abort_if_not", "assume")
             self.clang_format()
             self.remove_empty_lines()
@@ -38,12 +53,15 @@ class Rewriter:
             if handle_reach_error:
                 self.replace_reach_error_with_assertion()
             
-            # Join multi-line assertions into single lines
+            # Join multi-line assertions into single lines (my addition)
             self.join_multiline_assertions()
 
         self.lines_to_verify = self.new_code.split("\n")
         # Replace nondeterministic functions with random values
         self.remove_verifier_nondet()
+        # print("----------------REMOVED NON-DETERMINISTIC FUNCTIONS----------------")
+        # print(self.new_code)
+        # print("--------------------------------")
         self.lines_for_gpt = self.new_code.split("\n") 
         self.replacement: Dict[str, str] = {}
         assert(len(self.lines_for_gpt) == len(self.lines_to_verify))
@@ -69,7 +87,10 @@ class Rewriter:
     def remove_function(self, func_name: str):
         """Remove function definition from code by finding matching braces."""
         c_code = self.new_code
-        function_index = c_code.find(func_name)
+        # Optionally match 'extern' (possibly with whitespace) before func_name
+        pattern = rf'(?:extern\s+)?{re.escape(func_name)}'
+        match = re.search(pattern, c_code)
+        function_index = match.start() if match else -1
 
         if function_index == -1:
             return None
