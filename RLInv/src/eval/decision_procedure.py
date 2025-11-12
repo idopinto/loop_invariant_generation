@@ -75,7 +75,7 @@ class DecisionProcedure:
             # Track results as they complete
             invariant_correctness_report = None
             invariant_usefulness_report = None
-            
+        
             # Use as_completed to process results as they arrive (enables short-circuiting DEC-FALSE)
             # DEC-FALSE: If db = F, we can decide F without waiting for da to complete
             for future in as_completed([correctness_future, usefulness_future]):

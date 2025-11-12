@@ -25,7 +25,7 @@ from src.utils.plain_verifier import run_uautomizer
 from src.utils.task import Task
 from src.utils.utils import load_yaml_file
 from src.utils.baseline_utils import get_verifier_version, get_system_info, get_runtime_configuration, detect_z3_memory_limit, detect_slurm_resources, detect_java_heap_size
-
+ 
 root_dir = Path("/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv")
 
 verifier_executable_paths = {
@@ -53,7 +53,7 @@ def find_problem_files(evaluation_dir: Path) -> List[Path]:
         problems.append(yml_file)
     
     return problems
-
+ 
 def process_problem(
     yml_file: Path,
     uautomizer_path: Path,
@@ -492,9 +492,10 @@ def generate_timing_plots(
     if unknown_results:
         unknown_plot_path = plots_dir / "unknown_distribution.png"
         plot_timing_distribution(unknown_results, "Unknown Split", unknown_plot_path, timeout_seconds)
-    
     print(f"Plots saved to: {plots_dir}")
 
 
 if __name__ == "__main__":
     main()
+    
+    

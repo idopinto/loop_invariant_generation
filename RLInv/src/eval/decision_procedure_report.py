@@ -17,11 +17,11 @@ class DecisionProcedureReport:
     syntactic_validation_result: bool = False
     invariant_correctness_report: Optional[VerifierCallReport] = None
     invariant_usefulness_report: Optional[VerifierCallReport] = None
-    total_time_taken: float = 0.0  # Includes model generation time
+    total_time_taken: float = 0.0  # Includes model  generation time
     verification_time_taken: float = 0.0  # Only verification time (without model generation)
     model_generation_time: float = 0.0  # Model inference/token generation time
     report_file_path: str = ""
-    
+
     def to_dict(self) -> dict:
         """Convert the report to a dictionary for JSON serialization."""
         return {
@@ -112,3 +112,4 @@ class DecisionProcedureReport:
             model_generation_time=data.get('model_generation_time', 0.0),
             report_file_path=data.get('report_file_path', str(file_path))
         )
+    
