@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation"
+		}
+	],
+	"settings": {
+		"search.useIgnoreFiles": false,
+		"search.exclude": {
+			"**/__pycache__/**": true,
+			"**/.pytest_cache/**": true,
+			"**/.venv/**": true,
+			"**/wandb/**": true
+		},
+		"debug.console.fontSize": 12,
+		"search.defaultViewMode": "list"
+	}
+}
