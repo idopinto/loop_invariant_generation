@@ -8,7 +8,18 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from traceback import print_exception
 from src.utils.utils import write_file, parse_uautomizer_output
+
+
+root_dir = Path(__file__).parent.parent.parent
+verifier_executable_paths = {
+    "23": root_dir / "tools" / "UAutomizer23" / "Ultimate.py",
+    "24": root_dir / "tools" / "UAutomizer24" / "Ultimate.py",
+    "25": root_dir / "tools" / "UAutomizer25" / "Ultimate.py",
+    "26": root_dir / "tools" / "UAutomizer26" / "Ultimate.py",
+}
+
 @dataclass
 class VerifierCallReport:
     """
@@ -81,8 +92,9 @@ def run_uautomizer(
     # Validate required files exist
     for path in [uautomizer_path, program_path, property_file_path]:
         if not path.exists():
-            write_file(err_file_path, f"Required file not found: {path}")
-            return VerifierCallReport(reports_dir=str(reports_dir))
+            err_msg = f"Required file not found: {path}"
+            write_file(err_file_path, err_msg)
+            return VerifierCallReport(reports_dir=str(reports_dir), decision="ERROR", decision_reason=err_msg)
     
     # Build command
     command = [
@@ -147,23 +159,23 @@ def parse_args():
     parser.add_argument("--arch", type=str, default='32bit', choices=['32bit', '64bit'])
     parser.add_argument("--reports_dir", type=str, default='example_reports')
     parser.add_argument("--timeout_seconds", type=float, default=600.0)
-    parser.add_argument("--uautomizer_version", type=str, default='UAutomizer25', choices=['UAutomizer23', 'UAutomizer24', 'UAutomizer25', 'UAutomizer26'])
+    parser.add_argument("--uautomizer_version", type=str, default='25', choices=['23', '24', '25', '26'])
     return parser.parse_args()
     
 if __name__ == "__main__":
     args = parse_args()
-    program_path = args.root_dir / 'dataset' / 'evaluation'/'full' / 'c' / f"{args.program_name}.c"
+    program_path = args.root_dir / 'dataset' / 'evaluation'/"orig_programs" / f"{args.program_name}.c"
     property_file_path = args.root_dir / 'dataset' / 'properties' / f"{args.property_name}.prp"
     reports_dir = args.root_dir / args.reports_dir / args.program_name
     reports_dir.mkdir(parents=True, exist_ok=True)
-    uautomizer_path = args.root_dir / "tools" / args.uautomizer_version / "Ultimate.py"
+    uautomizer_path = verifier_executable_paths[args.uautomizer_version]
     
     print("\n --- Running UAutomizer Verification ---")
     print(f"  Program: {program_path}")
     print(f"  Property: {property_file_path}")
     print(f"  Architecture: {args.arch}")
     print(f"  Timeout: {args.timeout_seconds}s")
-    print(f"  UAutomizer version: {args.uautomizer_version}")
+    print(f"  UAutomizer path: {uautomizer_path}")
     
     result = run_uautomizer(
         program_path=program_path,
@@ -179,12 +191,12 @@ if __name__ == "__main__":
     for key, value in result_dict.items():
         print(f"  {key}: {value}")
 
-print("--------------------------------")   
-print(f"WitnessGraphML file: {reports_dir / f'{args.program_name}_witness.graphml'}")
-print(f"Witness YAML file: {reports_dir / f'{args.program_name}_witness.yml'}")
-print(f"Error file: {reports_dir / f'{args.program_name}.err'}")
-print(f"Log file: {reports_dir / f'{args.program_name}.log'}")
-print("--------------------------------")
+    print("--------------------------------")   
+    print(f"WitnessGraphML file: {reports_dir / f'{args.program_name}_witness.graphml'}")
+    print(f"Witness YAML file: {reports_dir / f'{args.program_name}_witness.yml'}")
+    print(f"Error file: {reports_dir / f'{args.program_name}.err'}")
+    print(f"Log file: {reports_dir / f'{args.program_name}.log'}")
+    print("--------------------------------")
 
 
 # uv run src/utils/plain_verifier.py --
