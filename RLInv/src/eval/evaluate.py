@@ -10,6 +10,7 @@ from src.utils.program import Program
 from src.eval.decision_procedure import DecisionProcedure
 from src.utils.utils import save_as_json
 from tqdm import tqdm
+
 @dataclass
 class InvBenchEvaluatorConfig:
     working_dir: Path
@@ -143,4 +144,4 @@ class InvBenchEvaluator:
         
         save_as_json(final_results, self.final_results_file_path)
         return final_results
-    
+        

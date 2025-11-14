@@ -267,7 +267,7 @@ class Program:
             lines.append("  No lemmas found")
         
         # Loop summary
-        lines.append(f"\n🔄 Loop analysis:")
+        lines.append("\n🔄 Loop analysis:")
         lines.append("-" * 40)
         lines.append(f"  Total loops: {self.number_of_loops}")
 

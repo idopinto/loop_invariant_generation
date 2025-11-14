@@ -13,6 +13,7 @@
 			"**/wandb/**": true
 		},
 		"debug.console.fontSize": 12,
-		"search.defaultViewMode": "list"
+		"search.defaultViewMode": "list",
+		"editor.fontSize": 15
 	}
 }
