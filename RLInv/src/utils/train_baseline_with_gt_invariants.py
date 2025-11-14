@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to capture unified baseline data from training dataset with UAutomizer.
+Script to get baseline data from training dataset with UAutomizer.
 
 This script:
 1. Processes all .c files in dataset/training/programs (or specified directory)
