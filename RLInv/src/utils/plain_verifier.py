@@ -8,17 +8,17 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from traceback import print_exception
+from src.utils.paths import UAUTOMIZER_PATHS, EVALUATION_DATASET_DIR, EXPERIMENTS_DIR, PROPERTIES_DIR    
 from src.utils.utils import write_file, parse_uautomizer_output
 
 
-root_dir = Path(__file__).parent.parent.parent
-verifier_executable_paths = {
-    "23": root_dir / "tools" / "UAutomizer23" / "Ultimate.py",
-    "24": root_dir / "tools" / "UAutomizer24" / "Ultimate.py",
-    "25": root_dir / "tools" / "UAutomizer25" / "Ultimate.py",
-    "26": root_dir / "tools" / "UAutomizer26" / "Ultimate.py",
-}
+# root_dir = Path(__file__).parent.parent.parent
+# verifier_executable_paths = {
+#     "23": root_dir / "tools" / "UAutomizer23" / "Ultimate.py",
+#     "24": root_dir / "tools" / "UAutomizer24" / "Ultimate.py",
+#     "25": root_dir / "tools" / "UAutomizer25" / "Ultimate.py",
+#     "26": root_dir / "tools" / "UAutomizer26" / "Ultimate.py",
+# }
 
 @dataclass
 class VerifierCallReport:
@@ -152,8 +152,6 @@ def run_uautomizer(
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run UAutomizer verifier")
-    parser.add_argument("--root_dir", type=Path, 
-                       default=Path('/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv'))
     parser.add_argument("--program_name", type=str, default='benchmark24_conjunctive_1')
     parser.add_argument("--property_name", type=str, default='unreach-call')
     parser.add_argument("--arch", type=str, default='32bit', choices=['32bit', '64bit'])
@@ -164,11 +162,11 @@ def parse_args():
     
 if __name__ == "__main__":
     args = parse_args()
-    program_path = args.root_dir / 'dataset' / 'evaluation'/"orig_programs" / f"{args.program_name}.c"
-    property_file_path = args.root_dir / 'dataset' / 'properties' / f"{args.property_name}.prp"
-    reports_dir = args.root_dir / args.reports_dir / args.program_name
+    program_path = EVALUATION_DATASET_DIR / 'orig_programs' / f"{args.program_name}.c"
+    property_file_path = PROPERTIES_DIR / f"{args.property_name}.prp"
+    reports_dir = EXPERIMENTS_DIR / args.reports_dir / args.program_name
     reports_dir.mkdir(parents=True, exist_ok=True)
-    uautomizer_path = verifier_executable_paths[args.uautomizer_version]
+    uautomizer_path = UAUTOMIZER_PATHS[args.uautomizer_version]
     
     print("\n --- Running UAutomizer Verification ---")
     print(f"  Program: {program_path}")

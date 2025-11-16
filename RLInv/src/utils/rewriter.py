@@ -3,6 +3,8 @@ import re
 from pathlib import Path
 from src.utils.utils import run_subprocess_and_get_output
 from configs import global_configurations as GC
+import tempfile
+import os
 
 
 class Rewriter:
@@ -12,34 +14,17 @@ class Rewriter:
     Transforms C code with verification annotations into clean, formatted code suitable
     for analysis by replacing __VERIFIER_* functions with standard equivalents.
     """
-    def __init__(self, filename: Path, rewrite=True, handle_reach_error=False, remove_comments=True):
+    def __init__(self, filename: Path, rewrite=True, handle_reach_error=False):
         """Initialize rewriter with C code from file."""
         self.code = filename.read_text().strip()
-        # print("--------------------------------")
-        # print(self.code)
-        # print("--------------------------------")
         self.new_code = self.code
-
         if rewrite:
-            # Process code: remove comments, format, and replace verification functions
-            self.remove_comments(with_gcc=True)
-            # print("---------------REMOVED COMMENTS----------------")
-            # print(self.new_code)
-            # print("--------------------------------")
+            self.new_code = re.sub(r'^\s*#include\s+[<"].*?[>"]\s*$', '', self.new_code, flags=re.MULTILINE)
+            self.remove_comments()
             self.remove_re_pattern(r'__attribute__\s*\(\(.*?\)\)')
             self.remove_re_pattern(r'printf\s*\([^)]*\)\s*;')
-            # print("----------------REMOVED PATTERNS----------------")
-            # print(self.new_code)
-            # print("--------------------------------")
-            # Remove verification functions
             self.remove_function("void reach_error")
-            # print("----------------REMOVED FUNCTIONS----------------")
-            # print(self.new_code)
-            # print("--------------------------------")
             self.remove_function("void __VERIFIER_assert")
-            # print("----------------REMOVED FUNCTIONS----------------")
-            # print(self.new_code)
-            # print("--------------------------------")
             # Replace verification functions with standard equivalents
             self.new_code = self.new_code.replace("__VERIFIER_assert", "assert")
             self.remove_function("void assert")
@@ -52,16 +37,12 @@ class Rewriter:
             self.has_reach_error = False
             if handle_reach_error:
                 self.replace_reach_error_with_assertion()
-            
             # Join multi-line assertions into single lines (my addition)
             self.join_multiline_assertions()
 
         self.lines_to_verify = self.new_code.split("\n")
         # Replace nondeterministic functions with random values
         self.remove_verifier_nondet()
-        # print("----------------REMOVED NON-DETERMINISTIC FUNCTIONS----------------")
-        # print(self.new_code)
-        # print("--------------------------------")
         self.lines_for_gpt = self.new_code.split("\n") 
         self.replacement: Dict[str, str] = {}
         assert(len(self.lines_for_gpt) == len(self.lines_to_verify))
@@ -88,7 +69,7 @@ class Rewriter:
         """Remove function definition from code by finding matching braces."""
         c_code = self.new_code
         # Optionally match 'extern' (possibly with whitespace) before func_name
-        pattern = rf'(?:extern\s+)?{re.escape(func_name)}'
+        pattern = rf'(?:extern\s+)?{re.escape(func_name)}\s*\('
         match = re.search(pattern, c_code)
         function_index = match.start() if match else -1
 
@@ -154,13 +135,17 @@ class Rewriter:
 
     def clang_format(self):
         """Format code using clang-format with custom style configuration."""
-        tmp_file = Path("tmp.c")
-        with tmp_file.open('w') as out_file:
-            out_file.write(self.new_code)
-        command = f"clang-format-15 --style=file:{GC.PATH_TO_CLANG_FORMAT} ./tmp.c"
-        output, err = run_subprocess_and_get_output(command)
-        tmp_file.unlink()
-        self.new_code = output
+        # Use unique temporary filename to avoid conflicts with parallel jobs
+        tmp_file = Path(tempfile.mkstemp(suffix='.c', prefix='clang_format_')[1])
+        try:
+            with tmp_file.open('w') as out_file:
+                out_file.write(self.new_code)
+            command = f"clang-format-15 --style=file:{GC.PATH_TO_CLANG_FORMAT} {tmp_file}"
+            output, err = run_subprocess_and_get_output(command)
+            self.new_code = output
+        finally:
+            if tmp_file.exists():
+                tmp_file.unlink()
 
     def remove_empty_lines(self):
         """Remove empty lines from the code."""
@@ -258,30 +243,40 @@ class Rewriter:
         
         self.new_code = "\n".join(new_lines)
 
-
-    def remove_comments(self, with_gcc: bool = True) -> str:
-        """ Remove C comments using gcc preprocessor and filter output."""
-        if with_gcc:
-            self.clang_format()
-            tmp_file = Path("tmp.c")
+    def remove_comments(self):
+        tmp_file = Path(tempfile.mkstemp(suffix='.c', prefix='gcc_preprocess_')[1])
+        try:
             tmp_file.write_text(self.new_code)
-            # Remove comments using gcc preprocessor
-            command = "gcc -fpreprocessed -dD -E tmp.c"
+            command = f"gcc -E -P {tmp_file}"
             output, err = run_subprocess_and_get_output(command)
-            tmp_file.unlink()
             self.new_code = output
+        finally:
+            if tmp_file.exists():
+                tmp_file.unlink()
 
-        lines = self.new_code.split("\n")
-        new_lines = []
-        for line in lines:
-            if line.strip()[:2] == "//":
-                continue
-            elif line.strip()[:1] == "#":
-                continue
-            else:
-                new_lines.append(line)
-        self.new_code = "\n".join(new_lines)
-        return self.new_code
+    # def remove_comments(self, with_gcc: bool = True) -> str:
+    #     """ Remove C comments using gcc preprocessor and filter output."""
+    #     if with_gcc:
+    #         self.clang_format()
+    #         tmp_file = Path("tmp.c")
+    #         tmp_file.write_text(self.new_code)
+    #         # Remove comments using gcc preprocessor
+    #         command = "gcc -fpreprocessed -dD -E tmp.c"
+    #         output, err = run_subprocess_and_get_output(command)
+    #         tmp_file.unlink()
+    #         self.new_code = output
+
+    #     lines = self.new_code.split("\n")
+    #     new_lines = []
+    #     for line in lines:
+    #         if line.strip()[:2] == "//":
+    #             continue
+    #         elif line.strip()[:1] == "#":
+    #             continue
+    #         else:
+    #             new_lines.append(line)
+    #     self.new_code = "\n".join(new_lines)
+    #     return self.new_code
 
     def replace_reach_error_with_assertion(self):
         """Replace reach_error() calls with assert(!condition) statements."""

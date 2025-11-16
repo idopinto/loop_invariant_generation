@@ -12,18 +12,22 @@ load_dotenv()
 LOCATION_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]
 
 class Model:
-    def __init__(self, model_path_or_name: str):
+    def __init__(self, model_path_or_name: str, sampling_params: dict = None):
         if not os.getenv("TOGETHER_API_KEY"):
             raise ValueError("TOGETHER_API_KEY environment variable not set")
         
         self.model_path_or_name = model_path_or_name
         self.client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
-        self.sampling_params = {
-            "n": 1,
-            "max_tokens": 2048,
-            "reasoning_effort": "low",
-            "temperature": 0.0,
-        }
+        if sampling_params is None:
+            self.sampling_params = {
+                "n": 1,
+                "max_tokens": 2048,
+                "reasoning_effort": "low",
+                "temperature": 0.0,
+            }
+        else:
+            self.sampling_params = sampling_params
+        print(f"Sampling params: {self.sampling_params}")
         
     def _label_assertion_points(self, assertion_points: dict):
         """Label assertion points and create bidirectional mapping."""

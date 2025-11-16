@@ -1,19 +1,10 @@
 import sys
-import os
 from pathlib import Path
 import pytest
 
-# Ensure project root on path
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.append(str(PROJECT_ROOT))
 
 from src.utils.program import Program, AssertionPointAttributes
 from src.utils.rewriter import Rewriter
-
-
-def _dataset_c_path(rel: str) -> Path:
-    return PROJECT_ROOT / "dataset" / "evaluation" / "easy" / "c" / rel
 
 
 @pytest.mark.parametrize(
@@ -23,7 +14,7 @@ def _dataset_c_path(rel: str) -> Path:
     ],
 )
 def test_program_structure_basic(c_filename, expected_points):
-    c_program = _dataset_c_path(c_filename)
+    c_program = Path("dataset") / "evaluation" / "easy" / "c" / c_filename
     if not c_program.exists():
         pytest.skip(f"Missing dataset file: {c_program}")
     r = Rewriter(c_program)

@@ -14,21 +14,46 @@ from src.utils.program import Program
 from src.utils.utils import write_file
 from pycparser import c_parser
 from src.utils.baseline_utils import get_verifier_version, get_system_info, get_runtime_configuration
+from src.utils.paths import DATASET_DIR, UAUTOMIZER_PATHS, PROPERTIES_DIR
 import statistics
-root_dir = Path(__file__).parent.parent.parent
-dataset_dir = root_dir / "dataset"
-property_file_path = dataset_dir / "properties" / "unreach-call.prp"
+
+property_file_path = PROPERTIES_DIR / "unreach-call.prp"
 ARCH = "32bit"
 DIFFICULTY_THRESHOLD = 30
 
 
-verifier_executable_paths = {
-    "23": root_dir / "tools" / "UAutomizer23" / "Ultimate.py",
-    "24": root_dir / "tools" / "UAutomizer24" / "Ultimate.py",
-    "25": root_dir / "tools" / "UAutomizer25" / "Ultimate.py",
-    "26": root_dir / "tools" / "UAutomizer26" / "Ultimate.py",
-}
-
+def extract_invariants_from_log(log_file: Path) -> List[Dict[str, Any]]:
+    """
+    Extract invariants from UAutomizer log file.
+    """
+    try:
+        invariants = []
+        with open(log_file, "r", encoding="utf-8", errors="ignore") as logf:
+            for line in logf:
+                if "InvariantResult [Line:" in line:
+                    idx1 = line.find("InvariantResult [Line:")
+                    idx2 = line.find("]:", idx1)
+                    if idx1 != -1 and idx2 != -1:
+                        try:
+                            line_num_str = line[idx1 + len("InvariantResult [Line:"):idx2]
+                            line_num = int(line_num_str.strip())
+                        except Exception:
+                            continue
+                        next_line = next(logf, None)
+                        if next_line is not None:
+                            invariant_tag = "Derived loop invariant:"
+                            inv_idx = next_line.find(invariant_tag)
+                            if inv_idx != -1:
+                                inv_val = next_line[inv_idx + len(invariant_tag):].strip()
+                                if inv_val:
+                                    invariants.append({
+                                        "line": line_num,
+                                        "invariant": inv_val
+                                    })
+        return invariants
+    except Exception as e:
+        print(f"Warning: Could not extract invariants from {log_file}: {e}")
+        return []   
 def extract_invariants_from_witness(witness_yml: Path) -> List[Dict[str, Any]]:
     """
     Extract invariants from UAutomizer witness.yml file.
@@ -37,12 +62,8 @@ def extract_invariants_from_witness(witness_yml: Path) -> List[Dict[str, Any]]:
       - InvariantResult [Line: X]: Loop Invariant
         Derived loop invariant: <invariant_text>
     """
-    invariants = []
-    
-    if not witness_yml.exists():
-        return invariants
-
     try:
+        invariants = []
         with open(witness_yml, "r", encoding="utf-8", errors="ignore") as f:
             yml_data = yaml.safe_load(f)
         
@@ -80,7 +101,7 @@ def reformat(file_path: Path) -> Tuple[str, bool, bool]:
     Returns:
         Tuple[str, bool, bool]: The reformatted program string, True if the file has no target assertion, False if the syntax is incorrect.
     """
-    r = Rewriter(file_path, rewrite=True)
+    r = Rewriter(file_path)
     program = Program(r.lines_to_verify, r.replacement)
     problems = {
         "no_target_assertion": False,
@@ -94,7 +115,7 @@ def reformat(file_path: Path) -> Tuple[str, bool, bool]:
     program_str= program.get_program_with_assertion(predicate=target_assert, 
                                                     assumptions=[],
                                                     assertion_points={},
-                                                        forGPT=False)
+                                                    forGPT=False)
     if not check_correct_syntax(program_str):
         problems["bad_syntax"] = True
         return "", problems
@@ -107,6 +128,7 @@ def process_file(
     reports_dir: Path = None,
     timeout_seconds: float = 600.0,
     k: int = 1,
+    rewrite: bool = False,
 ) -> Dict[str, Any]:
     """
     Process a single C file with UAutomizer.
@@ -114,8 +136,9 @@ def process_file(
     Returns:
         Dictionary with timing and invariant information
     """
-    shutil.copy(c_file, reports_dir / f"base_{c_file.name}")
     orig_program_str = open(c_file, "r").read()
+    base_program_path = reports_dir / f"base_{c_file.stem}.c"
+    write_file(base_program_path, orig_program_str)
     rf_program_str, rf_problems = reformat(c_file)
     rf_program_path = reports_dir / f"rf_{c_file.stem}.c"
     write_file(rf_program_path, rf_program_str)
@@ -125,17 +148,21 @@ def process_file(
             "rf_program": rf_program_str,
             "result": "UNKNOWN",
             "reason": "",
-            "timings": [],
-            "average_time": 0.0,
-            "median_time": 0.0
+            "timings": {
+                "all": [],
+                "average": 0.0,
+                "median": 0.0
+            },
     }
     if not rf_problems["no_target_assertion"] and not rf_problems["bad_syntax"]:
         try:
-            timings = []
             last_report = None
             for i in tqdm(range(k), desc="Running UAutomizer", leave=False):
+                program_to_verify = rf_program_path if rewrite else base_program_path
+                print("Verifying the program: ", program_to_verify)
+
                 report = run_uautomizer(
-                    program_path=rf_program_path,
+                    program_path=program_to_verify,
                     property_file_path=property_file_path,
                     reports_dir=reports_dir,
                     timeout_seconds=timeout_seconds,
@@ -143,25 +170,34 @@ def process_file(
                     arch=ARCH
                 )
                 if last_report:
+                    if last_report.decision == "TIMEOUT":
+                        print("Timeout in the last iteration, stopping.")
+                        break
                     if last_report.decision != report.decision:
                         error_msg = f"Different decisions for the same program: {last_report.decision} and {report.decision}"
                         result["result"] = "ERROR"
                         result["reason"] += " | " + error_msg
                         return result
+
+
                 # print(f"Report: {report.decision} ({report.decision_reason}) in {report.time_taken} seconds")
-                timings.append(report.time_taken)
+                result["timings"]["all"].append(report.time_taken)
                 last_report = report
-            result["timings"] = timings
-            result["average_time"] = statistics.mean(timings)
-            result["median_time"] = statistics.median(timings)
+            result["timings"]["average"] = statistics.mean(result["timings"]["all"])
+            result["timings"]["median"] = statistics.median(result["timings"]["all"])
             # result["time"] = report.time_taken
             result["result"] = report.decision
             result["reason"] = report.decision_reason
             
             if report.reports_dir:
-                witness_yml = Path(report.reports_dir) / f"rf_{c_file.stem}_witness.yml"
-                invariants = extract_invariants_from_witness(witness_yml)
-                result["invariants"] = invariants
+                witness_yml = Path(report.reports_dir) / f"{'rf' if rewrite else 'base'}_{c_file.stem}_witness.yml"
+                if not witness_yml.exists():
+                    log_file = Path(report.reports_dir) / f"{'rf' if rewrite else 'base'}_{c_file.stem}.log"
+                    invariants = extract_invariants_from_log(log_file)
+                    result["invariants"] = invariants
+                else:
+                    invariants = extract_invariants_from_witness(witness_yml)
+                    result["invariants"] = invariants
 
         except Exception as e:
             print(f"Error processing {c_file.name}: {e}")
@@ -175,11 +211,11 @@ def process_file(
             result["reason"] += " | bad_syntax"
     return result
 
-def get_c_files(data_dir: Path, reports_dir: Path, limit: int = -1) -> List[Path]:
+def get_c_files(data_dir: Path, reports_dir: Path, limit: int = -1, prefix: str = "") -> List[Path]:
     """
     Get all C files in the data directory.
     """
-    c_files = list(data_dir.glob("*.c"))
+    c_files = list(data_dir.glob(f"{prefix}*.c"))
     if not c_files:
         print(f"Error: No C files found in {data_dir}")
         sys.exit(1)
@@ -199,13 +235,13 @@ def load_data_checkpoint(results_file_path: Path) -> Tuple[List[Dict[str, Any]],
         return []
 
 def run_baseline(args: argparse.Namespace) -> None:
-    data_dir = dataset_dir / args.dataset_type / "orig_programs"
-    uautomizer_path = verifier_executable_paths[args.uautomizer_version]
-    folder_name = f"uautomizer{args.uautomizer_version}_{args.dataset_type}_k{args.k}"
-    output_dir = dataset_dir / args.dataset_type / folder_name
+    data_dir = DATASET_DIR / args.dataset_type / "orig_programs"
+    uautomizer_path = UAUTOMIZER_PATHS[args.uautomizer_version]
+    folder_name = f"uautomizer{args.uautomizer_version}_{args.dataset_type}_k{args.k}_{'rewrite' if args.rewrite else 'no_rewrite'}"
+    output_dir = DATASET_DIR / args.dataset_type / folder_name
     reports_dir = output_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
-    c_files_to_process = get_c_files(data_dir, reports_dir, args.limit)
+    c_files_to_process = get_c_files(data_dir, reports_dir, args.limit, args.prefix)
     results_file_path = output_dir / f"{folder_name}.json"
     results = load_data_checkpoint(results_file_path)
 
@@ -219,9 +255,11 @@ def run_baseline(args: argparse.Namespace) -> None:
             reports_dir=c_file_report_dir,
             timeout_seconds=args.timeout,
             k=args.k,
+            rewrite=args.rewrite
         )
         if result:
-            result["split"] = "easy" if result["median_time"] <= DIFFICULTY_THRESHOLD else "hard"
+            median_time = result["timings"]["median"]
+            result["split"] = "easy" if median_time <= DIFFICULTY_THRESHOLD else "hard"
             results.append(result)
             with open(results_file_path, "w") as f:
                 json.dump(results, f, indent=2)
@@ -251,7 +289,6 @@ def parse_args():
     parser.add_argument(
         "--uautomizer_version",
         type=str,
-        required=True,
         default="25",
         choices=["23", "24", "25", "26"],
         help="UAutomizer version (23, 24, 25, or 26)"
@@ -271,8 +308,19 @@ def parse_args():
     parser.add_argument(
         "--limit",
         type=int,
-        default=None,
+        default=-1,
         help="Limit the number of files to process (useful for testing). Processes first k files."
+    )
+    parser.add_argument(
+        "--rewrite",
+        action="store_true",
+        help="Rewrite the programs before running UAutomizer"
+    )
+    parser.add_argument(
+        "--prefix",
+        type=str,
+        default="",
+        help="Filter files by prefix"
     )
     return parser.parse_args()
 
@@ -312,7 +360,7 @@ def save_metadata(output_path: Path, uautomizer_path: Path, timeout_seconds: flo
     
 def main():
     args = parse_args()
-    print(f"Running baseline with the following arguments: {args}")
+    print(f"Running baseline with the following arguments:\n{args}")
     run_baseline(args)
 
 

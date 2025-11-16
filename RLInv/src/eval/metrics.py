@@ -20,18 +20,18 @@ class InvBenchMetrics:
         self.model_metrics = pd.DataFrame(columns=["Model", "% Correct Invariant", "% Speedup", "Speedup>1", "Speedup_all"])
         self.baseline_timings = []
     
-    def add_model_with_timing_comparison(self, model_name: str, model_results: List[Dict], baseline_timing: List[Dict], include_model_generation_time: bool = False):
+    def add_model_with_timing_comparison(self, model_name: str, model_results: List[Dict], baseline: List[Dict], include_model_generation_time: bool = False):
         """Add model results and calculate metrics.
         
         Args:
             model_name: Name of the model
             model_results: Model evaluation results
-            baseline_timing: Baseline timing results
+            baseline: Baseline timing results
             include_model_generation_time: If True, use total_time_taken (includes model gen time).
                                           If False (default), use verification_time_taken (only verification).
         """
         # self.baseline_timing = baseline_timing
-        df = calculate_metrics(model_name=model_name, model_results=model_results, baseline_timing=baseline_timing, include_model_generation_time=include_model_generation_time)
+        df = calculate_metrics(model_name=model_name, model_results=model_results, baseline=baseline, include_model_generation_time=include_model_generation_time)
         if self.model_metrics.empty:
             self.model_metrics = df
         else:
@@ -60,7 +60,7 @@ class InvBenchMetrics:
         self.model_metrics.to_csv(output_file, index=False)
 
 
-def calculate_metrics(model_name: str, model_results: Union[Dict, List[Dict]], baseline_timing: List[Dict], include_model_generation_time: bool = False) -> pd.DataFrame:
+def calculate_metrics(model_name: str, model_results: Union[Dict, List[Dict]], baseline: List[Dict], include_model_generation_time: bool = False) -> pd.DataFrame:
     """
     Calculate InvBench metrics for a model.
     
@@ -83,64 +83,62 @@ def calculate_metrics(model_name: str, model_results: Union[Dict, List[Dict]], b
     speedup_count = 0
     speedups_gt1 = []
     correct_count = 0
+
+    task_results = model_results.get("results", [])
+    # print(f"Task results: {task_results}")
+    # Check for duplicate stems (which would cause overwrites)
+    # stems_seen = {}
+    # print(f"Baseline: {baseline}")
+    # for r in baseline:
+    #     stem = Path(r["file"]).stem
+    #     if stem in stems_seen:
+    #         print(f"WARNING: Duplicate stem '{stem}' found! Files: {stems_seen[stem]} and {r['file']}")
+    #     else:
+    #         stems_seen[stem] = r["file"]
     
-    # Extract task results from model_results
-    if isinstance(model_results, dict):
-        task_results = model_results.get("results", [])
-    elif isinstance(model_results, list):
-        task_results = model_results
-    else:
-        return pd.DataFrame(columns=["Model", "% Correct Invariant", "% Speedup", "Speedup>1", "Speedup_all"])
-    
-    if not task_results:
-        return pd.DataFrame(columns=["Model", "% Correct Invariant", "% Speedup", "Speedup>1", "Speedup_all"])
-    
-    # Create baseline lookups (preserve original list for expected_verdict)
-    baseline_timing_dict = {r["file"]: r["time"] for r in baseline_timing}
-    expected_verdict = {r["file"]: str(r.get("result", "UNKNOWN")).lower() for r in baseline_timing}
+    expected_verdict = {Path(r["file"]).stem: str(r.get("result", "UNKNOWN")).lower() for r in baseline}
+    baseline_timing_lookup = {Path(r["file"]).stem: r["timings"]["median"] for r in baseline}
+    # print(f"Baseline timing lookup: {baseline_timing_lookup}")
+    # print(f"Expected verdict: {expected_verdict}")
+    # Debug: Check for the specific task
+    # if task_results:
+    #     first_task_name = task_results[0].get("task_name", "")
+    #     # print(f"DEBUG: Looking up task_name: '{first_task_name}'")
+    #     if first_task_name in baseline_timing_lookup:
+    #         # print(f"DEBUG: Found baseline time: {baseline_timing_lookup[first_task_name]}")
+    #         # Also check what file it came from
+    #         matching_files = [r["file"] for r in baseline if Path(r["file"]).stem == first_task_name]
+    #         # print(f"DEBUG: Matching files in baseline: {matching_files}")
+    #         for r in baseline:
+    #             if Path(r["file"]).stem == first_task_name:
+    #                 print(f"DEBUG: File '{r['file']}' has median: {r['timings']['median']}")
+    #     else:
+    #         # print(f"DEBUG: Task name '{first_task_name}' NOT found in lookup!")
+    #         # Try to find similar keys
+    #         similar_keys = [k for k in baseline_timing_lookup.keys() if first_task_name in k or k in first_task_name]
+    #         print(f"DEBUG: Similar keys found: {similar_keys}")
     
     for result in task_results:
-        if not isinstance(result, dict):
-            continue
-            
         task_name = result.get("task_name", "")
-        baseline_time = baseline_timing_dict.get(task_name, 0.0)
-        report = result.get("report", {})
+        baseline_time = baseline_timing_lookup.get(task_name, 0.0)
+        print(f"Baseline time: {baseline_time}")
+        report = result.get("report", {})        
+        final_decision = report.get("final_decision", "UNKNOWN")
         
-        if not isinstance(report, dict):
-            continue
+        # Check candidate invariant correctness
+        correctness_invariant_report = report.get("invariant_correctness_report") or {}
+        correctness_decision = correctness_invariant_report.get("decision", "UNKNOWN") if isinstance(correctness_invariant_report, dict) else "UNKNOWN"
+        correct_count += 1 if correctness_decision == "TRUE" else 0
         
-        # Get final decision (might be a dict with "name" key or a string)
-        final_decision_raw = report.get("final_decision", "UNKNOWN")
-        if isinstance(final_decision_raw, dict):
-            final_decision = str(final_decision_raw.get("name", "UNKNOWN")).upper()
-        else:
-            final_decision = str(final_decision_raw).upper()
-        
-        # Check invariant correctness
-        correctness_invariant_report = report.get("invariant_correctness_report", {})
-        if isinstance(correctness_invariant_report, dict):
-            correctness_decision = correctness_invariant_report.get("decision", "")
-            if isinstance(correctness_decision, dict):
-                correctness_decision = correctness_decision.get("name", "")
-            if str(correctness_decision).upper() == "TRUE" or str(correctness_decision).lower() == "verified":
-                correct_count += 1
-        
-        # Get model time (verification or total)
+        # Get model timing (handle missing keys)
         if include_model_generation_time:
-            model_time = report.get("total_time_taken", 0.0)
+            model_timing = report.get("total_time_taken", 0.0)
         else:
-            model_time = report.get("verification_time_taken", report.get("total_time_taken", 0.0))
-            
+            model_timing = report.get("verification_time_taken", report.get("total_time_taken", 0.0))
+        print(f"Model timing: {model_timing}")
         expected = expected_verdict.get(task_name, "unknown")
-        invalid_for_speedup = (final_decision == "UNKNOWN") or (expected != "unknown" and final_decision.lower() != expected)
-            
-        # Calculate speedup
-        if baseline_time == 0.0 or model_time <= 0 or invalid_for_speedup:
-            speedup = 1.0
-        else:
-            speedup = baseline_time / model_time
-        
+        invalid_for_speedup = (final_decision in {"UNKNOWN","TIMEOUT"}) or (expected != "unknown" and final_decision.lower() != expected)
+        speedup = 1.0 if baseline_time == 0.0 or model_timing <= 0 or invalid_for_speedup else baseline_time / model_timing
         all_speedups.append(speedup)
         if speedup > 1.0:
             speedup_count += 1

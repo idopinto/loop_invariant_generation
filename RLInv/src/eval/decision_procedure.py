@@ -6,10 +6,11 @@ from src.utils.predicate import Predicate
 from src.eval.decision_procedure_report import DecisionProcedureReport
 from src.utils.validate import syntactic_validation
 
+
+
 class DecisionProcedure:
-    def __init__(self, program: Program, target_property_file_path: Path, code_dir: Path, root_dir: Path, timeout_seconds: float = 600.0):
+    def __init__(self, program: Program, target_property_file_path: Path, arch: str, code_dir: Path, uautomizer_path: Path, timeout_seconds: float = 600.0):
         self.program = program
-        self.root_dir = root_dir
         self.target_property_file_path = target_property_file_path # "unreach-call.prp"
         # Get the target assert from the program's assertions
         if self.program.assertions:
@@ -17,28 +18,30 @@ class DecisionProcedure:
         else:
             self.target_assert = None   
         self.code_dir = code_dir
-        
+        self.arch = arch
         # Create reports directory
         self.reports_dir = Path(code_dir).parent / "reports"
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         self.timeout_seconds = max(0.1, float(timeout_seconds))
-        self.uautomizer_executable_path = root_dir / "tools" / "uautomizer" / "Ultimate.py"
-    
-    def run_verifier(self, program_str: str, property_file_path: Path, timeout_seconds: float, kind: str):
+        self.uautomizer_path = uautomizer_path
+
+    def run_verifier(self, program_str: str, kind: str):
         program_path = self.code_dir / f"code_for_{kind}.c"
         with open(program_path, 'w') as out_file:
             out_file.write(program_str)
         verifier_report: VerifierCallReport = run_uautomizer(
             program_path=program_path, 
-            property_file_path=property_file_path,
+            property_file_path=self.target_property_file_path,
             reports_dir=self.reports_dir,
-            timeout_seconds=timeout_seconds,
-            uautomizer_path=self.uautomizer_executable_path
+            arch=self.arch,
+            timeout_seconds=self.timeout_seconds,
+            uautomizer_path=self.uautomizer_path
         )
+        print(f"Verifier report: {verifier_report}")
         return verifier_report
     
     def decide(self, candidate_invariant: Predicate, model_gen_time: float = 0.0) -> DecisionProcedureReport:
-        
+
         program_for_correctness = self.program.get_program_with_assertion(predicate=candidate_invariant, 
                                                      assumptions=[],
                                                      assertion_points={},
@@ -59,16 +62,12 @@ class DecisionProcedure:
             correctness_future = executor.submit(
                 self.run_verifier,
                 program_str=program_for_correctness,
-                property_file_path=self.target_property_file_path,
-                timeout_seconds=self.timeout_seconds,
                 kind="correctness"
             )
             
             usefulness_future = executor.submit(
                 self.run_verifier,
                 program_str=program_for_usefullness,
-                property_file_path=self.target_property_file_path,
-                timeout_seconds=self.timeout_seconds,
                 kind="usefulness"
             )
             
@@ -116,7 +115,7 @@ class DecisionProcedure:
         # answer on the goal under the assumption q
         elif (invariant_correctness_report is not None and 
               invariant_correctness_report.decision == "TRUE" and 
-              invariant_usefulness_report.decision in {"TRUE", "UNKNOWN"}):
+              invariant_usefulness_report.decision in {"TRUE", "UNKNOWN", "TIMEOUT"}):
             final_decision = invariant_usefulness_report.decision
             decision_rule = "DEC-PROP"
         
@@ -168,6 +167,6 @@ class DecisionProcedure:
         # save the final report to a json file
         report_file_path = self.reports_dir / "decision_report.json"
         final_report.save_json(report_file_path)
-        print(f"Decision report saved to:\n\t {report_file_path.relative_to(self.root_dir)}")
+        print(f"Decision report saved to:\n\t {str(report_file_path)}")
         return final_report
     

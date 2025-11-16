@@ -60,22 +60,7 @@ def create_working_dir(working_dir: Path, c_filename: Path, property_kind: str):
         print(f"Error: {e}")
         exit(1)
 
-def load_dataset(dataset_path: Path, property_kind: str = "unreach", limit: int = None, prefix: Optional[str] = None, suffix: Optional[str] = None) -> List[Task]:
-    """Load dataset from YAML files."""
-    from src.utils.task import Task  # Import here to avoid circular import
-    tasks = []
-    print(f"Loading dataset from: {dataset_path}")
-    for yml_file in dataset_path.glob("*.yml"):
-        # print(yml_file)s
-        if limit is not None and limit != -1 and len(tasks) >= limit:
-            break
-        if prefix is not None and not yml_file.stem.startswith(prefix):
-            continue
-        if suffix is not None and not yml_file.stem.endswith(suffix):
-            continue
-        task = Task(yml_file_path=yml_file, property_kind=property_kind)
-        tasks.append(task)
-    return tasks
+
 
 def parse_uautomizer_output(output: str) -> str:
     import re
