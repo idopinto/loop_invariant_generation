@@ -163,7 +163,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     # program_path = EVALUATION_DATASET_DIR / 'orig_programs' / f"{args.program_name}.c"
-    program_path = Path("/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/dataset/evaluation/uautomizer25_evaluation_k3_rewrite/reports/sll-queue-1_12/rf_sll-queue-1_12.c")
+    program_path = Path("/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/dataset/example2.c")
     property_file_path = PROPERTIES_DIR / f"{args.property_name}.prp"
     reports_dir = EXPERIMENTS_DIR / args.reports_dir / args.program_name
     reports_dir.mkdir(parents=True, exist_ok=True)
@@ -190,12 +190,12 @@ if __name__ == "__main__":
     for key, value in result_dict.items():
         print(f"  {key}: {value}")
 
-    print("--------------------------------")   
-    print(f"WitnessGraphML file: {reports_dir / f'{args.program_name}_witness.graphml'}")
-    print(f"Witness YAML file: {reports_dir / f'{args.program_name}_witness.yml'}")
-    print(f"Error file: {reports_dir / f'{args.program_name}.err'}")
-    print(f"Log file: {reports_dir / f'{args.program_name}.log'}")
-    print("--------------------------------")
+    # print("--------------------------------")   
+    # print(f"WitnessGraphML file: {reports_dir / f'{args.program_name}_witness.graphml'}")
+    # print(f"Witness YAML file: {reports_dir / f'{args.program_name}_witness.yml'}")
+    # print(f"Error file: {reports_dir / f'{args.program_name}.err'}")
+    # print(f"Log file: {reports_dir / f'{args.program_name}.log'}")
+    # print("--------------------------------")
 
 
 # uv run src/utils/plain_verifier.py --

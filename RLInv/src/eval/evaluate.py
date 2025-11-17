@@ -1,13 +1,12 @@
 import time
-import re
 import argparse
 from pathlib import Path
 from shutil import copy
 from typing import List, Optional, Dict
 from tqdm import tqdm
 from dataclasses import dataclass
-import os
-from src.eval.model import Model, ModelConfig
+from src.eval.models.model import Model, ModelConfig
+from src.eval.models.openai_responses_model import OpenAIResponsesModel
 from src.utils.task import Task
 from src.utils.rewriter import Rewriter
 from src.utils.program import Program
@@ -164,7 +163,6 @@ class InvBenchEvaluator:
             copy(task.property_path, target_property_path)
             r = Rewriter(c_program_path, rewrite=True)
             program = Program(r.lines_to_verify, r.replacement)
-            
             # Determine timeout
             task_base_filename = task.yml_file.stem
             baseline_time = self.baseline_timing_lookup.get(task_base_filename, 0.0)
@@ -186,6 +184,7 @@ class InvBenchEvaluator:
                 'program': program,
                 'decision_procedure': decision_procedure,
                 'baseline_time': baseline_time,
+                'task_dir': task_dir,
             })
         
         return evaluators
@@ -203,15 +202,18 @@ class InvBenchEvaluator:
         for i, evaluator_data in tqdm(enumerate(evaluators), total=len(evaluators), desc="Evaluating tasks"):
             task = evaluator_data['task']
             program = evaluator_data['program']
+            task_dir = evaluator_data['task_dir']
             decision_procedure = evaluator_data['decision_procedure']
             print(f"\n--- Evaluating task {i+1}/{len(evaluators)}: {task.source_code_path.name} ---")
             
             # Generate candidate invariant
             model_gen_start = time.perf_counter()
-            candidate_invariant = model.generate_candidate_invariant(program=program)
+            candidate_invariant, model_response = model.generate_candidate_invariant(program=program)
             model_gen_time = time.perf_counter() - model_gen_start
-            
-            # Run decision procedure
+
+            # Save model response to working dir
+            model_response_file_path = task_dir / f"model_response_{i}.json"
+            save_as_json(model_response, model_response_file_path)            # Run decision procedure
             baseline_time = self.baseline_timing_lookup.get(task.yml_file.stem, 0.0)
             report = decision_procedure.run(candidate_invariant, model_gen_time)
             
@@ -348,9 +350,26 @@ if __name__ == "__main__":
                 "reasoning_effort": "low",
                 "n": 1,
             }
-        }
+        },
+
+        # {
+        #     "client": "openai",
+        #     "model_path_or_name": "gpt-5.1",
+        #     "nickname": "gpt-5.1",
+        #     "sampling_params": {
+        #         "reasoning": {"effort": "medium","summary": "auto"},
+        #         "text": {"verbosity": "low"},
+        #         # "temperature": 0.0,
+        #         "max_output_tokens": 2048,
+        #     }
+        # },
     ]
     models_configs = [ModelConfig.from_dict(model) for model in models]
+    print("="*80)
+    print("Models configs:")
+    for model_config in models_configs:
+        print(model_config)
+    print("="*80)
     evaluator_config = InvBenchEvaluatorConfig(
         project_name=args.project_name,
         exp_id=args.exp_id,

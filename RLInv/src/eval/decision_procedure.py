@@ -12,14 +12,12 @@ class DecisionProcedure:
     def __init__(self, program: Program, target_property_file_path: Path, arch: str, code_dir: Path, uautomizer_path: Path, timeout_seconds: float = 600.0):
         self.program = program
         self.target_property_file_path = target_property_file_path # "unreach-call.prp"
-        # Get the target assert from the program's assertions
         if self.program.assertions and len(self.program.assertions) > 0:
-            self.target_assert = program.assertions[0]  # Assuming first assert is the target
+            self.target_assert = program.assertions[0]  # TODO: Assuming first assert is the target
         else:
             self.target_assert = None   
         self.code_dir = code_dir
         self.arch = arch
-        # Create reports directory
         self.reports_dir = Path(code_dir).parent / "reports"
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         self.timeout_seconds = max(0.1, float(timeout_seconds))
@@ -37,7 +35,7 @@ class DecisionProcedure:
             timeout_seconds=self.timeout_seconds,
             uautomizer_path=self.uautomizer_path
         )
-        print(f"Verifier report: {verifier_report}")
+        # print(f"Verifier report: {verifier_report}")
         return verifier_report
     
     def decide(self, candidate_invariant: Predicate, model_gen_time: float = 0.0) -> DecisionProcedureReport:
@@ -105,34 +103,35 @@ class DecisionProcedure:
         
         # DEC-FALSE: If db = F, decide F (short-circuit refutation)
         # This is a "short-circuit" because da doesn't need to be T to decide F
-        if invariant_usefulness_report.decision == "FALSE":
+        if invariant_usefulness_report and invariant_usefulness_report.decision == "FALSE":
             final_decision = "FALSE"
             decision_rule = "DEC-FALSE"
         
         # DEC_PROP: If da = T and db ∈ {T, U}, decide db
-        # Rule DEC-PROP implements the provethen-use strategy: 
-        # once the candidate invariant q is established, the outcome is exactly the verifier's
-        # answer on the goal under the assumption q
-        elif (invariant_correctness_report is not None and 
-              invariant_correctness_report.decision == "TRUE" and 
-              invariant_usefulness_report.decision in {"TRUE", "UNKNOWN", "TIMEOUT"}):
-            final_decision = invariant_usefulness_report.decision
-            decision_rule = "DEC-PROP"
+        # Rule DEC-PROP implements the prove then-use strategy: 
+        # once the candidate invariant q is established, the outcome is exactly the verifier answer on the goal under the assumption q
+        elif (invariant_correctness_report and invariant_correctness_report.decision == "TRUE" and 
+              invariant_usefulness_report.decision in {"TRUE", "UNKNOWN", "TIMEOUT", "ERROR"}):
+              if invariant_usefulness_report.decision == "TRUE":
+                final_decision = "TRUE"
+              else:
+                final_decision = "UNKNOWN" # TIMEOUTS AND ERRORS are considered as UNKNOWN
+              # final_decision = invariant_usefulness_report.decision
+              decision_rule = "DEC-PROP"
         
         # DEC-U: If da ≠ T and db ≠ F, decide U
         # Rule DEC-U gives explicit conditions for inconclusiveness:
         # the goal is not refuted under q and q is not established as an invariant
-        elif (invariant_correctness_report is not None and 
-              invariant_correctness_report.decision != "TRUE" and 
+        elif (invariant_correctness_report and invariant_correctness_report.decision != "TRUE" and 
               invariant_usefulness_report.decision != "FALSE"):
             final_decision = "UNKNOWN"
             decision_rule = "DEC-U"
         # If correctness was cancelled (short-circuited), we already decided F above
-        elif invariant_correctness_report is None:
-            # This should only happen when DEC-FALSE was triggered
-            # (decision already set to Falsified above)
-            final_decision = "FALSE"
-            decision_rule = "DEC-FALSE"
+        # elif invariant_correctness_report is None:
+        #     # This should only happen when DEC-FALSE was triggered
+        #     # (decision already set to Falsified above)
+        #     final_decision = "FALSE"
+        #     decision_rule = "DEC-FALSE"
         
         # Calculate verification time: max of both runs since they execute in parallel
         # Use 0 if correctness was cancelled (short-circuited)

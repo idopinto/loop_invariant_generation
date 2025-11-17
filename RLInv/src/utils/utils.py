@@ -16,7 +16,6 @@ def write_file(file_path: Path, content: str) -> None:
 def save_as_json(content: dict, save_path: Path) -> None:
     with open(save_path, 'w') as f:
         json.dump(content, f, indent=2)
-    print(f"\nResults saved to:\n\t {save_path}")
     
 def load_json(file_path: Path) -> List[Dict]:
     """Load results from JSON file."""

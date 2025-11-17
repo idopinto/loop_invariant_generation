@@ -85,43 +85,14 @@ def calculate_metrics(model_name: str, model_results: Union[Dict, List[Dict]], b
     correct_count = 0
 
     task_results = model_results.get("results", [])
-    # print(f"Task results: {task_results}")
-    # Check for duplicate stems (which would cause overwrites)
-    # stems_seen = {}
-    # print(f"Baseline: {baseline}")
-    # for r in baseline:
-    #     stem = Path(r["file"]).stem
-    #     if stem in stems_seen:
-    #         print(f"WARNING: Duplicate stem '{stem}' found! Files: {stems_seen[stem]} and {r['file']}")
-    #     else:
-    #         stems_seen[stem] = r["file"]
     
     expected_verdict = {Path(r["file"]).stem: str(r.get("result", "UNKNOWN")).lower() for r in baseline}
     baseline_timing_lookup = {Path(r["file"]).stem: r["timings"]["median"] for r in baseline}
-    # print(f"Baseline timing lookup: {baseline_timing_lookup}")
-    # print(f"Expected verdict: {expected_verdict}")
-    # Debug: Check for the specific task
-    # if task_results:
-    #     first_task_name = task_results[0].get("task_name", "")
-    #     # print(f"DEBUG: Looking up task_name: '{first_task_name}'")
-    #     if first_task_name in baseline_timing_lookup:
-    #         # print(f"DEBUG: Found baseline time: {baseline_timing_lookup[first_task_name]}")
-    #         # Also check what file it came from
-    #         matching_files = [r["file"] for r in baseline if Path(r["file"]).stem == first_task_name]
-    #         # print(f"DEBUG: Matching files in baseline: {matching_files}")
-    #         for r in baseline:
-    #             if Path(r["file"]).stem == first_task_name:
-    #                 print(f"DEBUG: File '{r['file']}' has median: {r['timings']['median']}")
-    #     else:
-    #         # print(f"DEBUG: Task name '{first_task_name}' NOT found in lookup!")
-    #         # Try to find similar keys
-    #         similar_keys = [k for k in baseline_timing_lookup.keys() if first_task_name in k or k in first_task_name]
-    #         print(f"DEBUG: Similar keys found: {similar_keys}")
     
     for result in task_results:
         task_name = result.get("task_name", "")
         baseline_time = baseline_timing_lookup.get(task_name, 0.0)
-        print(f"Baseline time: {baseline_time}")
+        # print(f"Baseline time: {baseline_time}")
         report = result.get("report", {})        
         final_decision = report.get("final_decision", "UNKNOWN")
         
@@ -135,7 +106,7 @@ def calculate_metrics(model_name: str, model_results: Union[Dict, List[Dict]], b
             model_timing = report.get("total_time_taken", 0.0)
         else:
             model_timing = report.get("verification_time_taken", report.get("total_time_taken", 0.0))
-        print(f"Model timing: {model_timing}")
+        # print(f"Model timing: {model_timing}")
         expected = expected_verdict.get(task_name, "unknown")
         invalid_for_speedup = (final_decision in {"UNKNOWN","TIMEOUT"}) or (expected != "unknown" and final_decision.lower() != expected)
         speedup = 1.0 if baseline_time == 0.0 or model_timing <= 0 or invalid_for_speedup else baseline_time / model_timing
