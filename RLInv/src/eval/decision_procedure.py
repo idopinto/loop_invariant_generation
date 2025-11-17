@@ -13,7 +13,7 @@ class DecisionProcedure:
         self.program = program
         self.target_property_file_path = target_property_file_path # "unreach-call.prp"
         # Get the target assert from the program's assertions
-        if self.program.assertions:
+        if self.program.assertions and len(self.program.assertions) > 0:
             self.target_assert = program.assertions[0]  # Assuming first assert is the target
         else:
             self.target_assert = None   
