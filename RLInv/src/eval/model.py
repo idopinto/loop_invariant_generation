@@ -1,9 +1,10 @@
-from src.utils.task import Task
+from dataclasses import dataclass
 from src.utils.program import Program
 from src.utils.predicate import Predicate
 from together import Together
 from dotenv import load_dotenv
 from copy import copy
+from typing import Dict
 import os
 import re
 
@@ -11,23 +12,32 @@ load_dotenv()
 
 LOCATION_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]
 
+
+@dataclass
+class ModelConfig:
+    model_path_or_name: str
+    sampling_params: Dict
+    client: str 
+    nickname: str
+
+    @classmethod
+    def from_dict(cls, model_config: Dict):
+        return cls(
+            client=model_config["client"],
+            model_path_or_name=model_config["model_path_or_name"],
+            sampling_params=model_config["sampling_params"],
+            nickname=model_config["nickname"]
+        )
+
 class Model:
-    def __init__(self, model_path_or_name: str, sampling_params: dict = None):
-        if not os.getenv("TOGETHER_API_KEY"):
-            raise ValueError("TOGETHER_API_KEY environment variable not set")
-        
-        self.model_path_or_name = model_path_or_name
-        self.client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
-        if sampling_params is None:
-            self.sampling_params = {
-                "n": 1,
-                "max_tokens": 2048,
-                "reasoning_effort": "low",
-                "temperature": 0.0,
-            }
+    def __init__(self, model_config: ModelConfig):
+        self.model_config = model_config    
+        if self.model_config.client == "together":
+            self.client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
         else:
-            self.sampling_params = sampling_params
-        print(f"Sampling params: {self.sampling_params}")
+            raise ValueError(f"Unsupported client: {self.model_config.client}")
+        print(f"Model: {self.model_config.nickname}")
+        print(f"Sampling params: {self.model_config.sampling_params}")
         
     def _label_assertion_points(self, assertion_points: dict):
         """Label assertion points and create bidirectional mapping."""
@@ -142,12 +152,12 @@ assert(x >= 0 && y < 100); // Line A
         print(f"\nSystem msg:\n{system_msg}")
         print(f"\nUser msg:\n{user_msg}")
         response = self.client.chat.completions.create(
-            model=self.model_path_or_name,
+            model=self.model_config.model_path_or_name,
             messages=[
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": user_msg}
             ],
-            **self.sampling_params
+            **self.model_config.sampling_params
         )
         reasoning = response.choices[0].message.reasoning
         raw_response = response.choices[0].message.content

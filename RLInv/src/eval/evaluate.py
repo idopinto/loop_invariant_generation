@@ -4,10 +4,10 @@ import argparse
 from pathlib import Path
 from shutil import copy
 from typing import List, Optional, Dict
-from dataclasses import dataclass, field
 from tqdm import tqdm
-
-from src.eval.model import Model
+from dataclasses import dataclass
+import os
+from src.eval.model import Model, ModelConfig
 from src.utils.task import Task
 from src.utils.rewriter import Rewriter
 from src.utils.program import Program
@@ -15,15 +15,7 @@ from src.eval.decision_procedure import DecisionProcedure
 from src.utils.utils import save_as_json, load_json
 from src.eval.metrics import InvBenchMetrics
 from src.utils.paths import EVALUATION_DATASET_DIR, EXPERIMENTS_DIR, UAUTOMIZER_PATHS
-
-
-def _sanitize(name: str) -> str:
-    """Sanitize a model name/path for use as a directory name."""
-    sanitized = re.sub(r'[^\w\-_.]', '_', name)
-    sanitized = re.sub(r'_+', '_', sanitized)
-    sanitized = sanitized.strip('_')
-    return sanitized
-
+import weave
 
 def load_tasks(
     dataset_path: Path,
@@ -33,6 +25,7 @@ def load_tasks(
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     data_split: str = "easy"
+
 ) -> List[Task]:
     """Load dataset from YAML files. Filter tasks based on baseline data split."""
     tasks = []
@@ -58,11 +51,14 @@ def load_tasks(
     print(tasks[0])
     return tasks
 
+def setup_weave_exp(project_name: str):
+    weave.init(f'ip-ai/{project_name}')
 
 @dataclass
-class UnifiedEvaluatorConfig:
+class InvBenchEvaluatorConfig:
     """Unified configuration for evaluation experiments."""
     # Experiment identification
+    project_name: str = "rlinv"
     exp_id: str = "exp_1"
     
     # Dataset configuration
@@ -71,23 +67,53 @@ class UnifiedEvaluatorConfig:
     property_kind: str = "unreach"
     limit: int = -1
     prefix: Optional[str] = None
-    suffix: Optional[str] = None
-    
-    # Model configuration
-    models: List[str] = field(default_factory=lambda: ["gpt-oss-20b"])
-    
+    suffix: Optional[str] = None    
     # Evaluation configuration
     default_timeout_seconds: float = 600.0
-    results_filename: str = "model_results.json"
+    compute_metrics: bool = False
+    # results_filename: str = "model_results.json"
 
-class UnifiedEvaluator:
+class InvBenchEvaluator:
     """
-    Unified evaluator that combines experiment setup and evaluation logic.
-    Can evaluate multiple models on a dataset with proper metrics tracking.
+        A class for evaluating invariant synthesis models on the InvBench evaluation benchmark.
+
+        This class manages experiment setup, including loading datasets, configuring tasks, initializing model evaluators, 
+        tracking metrics, and storing evaluation results.
+
+        Usage:
+            1. Initialize with an InvBenchEvaluatorConfig and a list of ModelConfig instances.
+            2. The class sets up the experiment environment, loads the baseline data and tasks.
+            3. Evaluators can be created for models and results can be computed and analyzed.
+
+        Attributes:
+            config (InvBenchEvaluatorConfig): Configuration for the experiment and dataset.
+            model_configs (List[ModelConfig]): List of model configuration objects.
+            tasks (List[Task]): List of loaded evaluation tasks.
+            inv_bench_metrics_without_gen_time (InvBenchMetrics): Metrics tracker excluding generation time.
+            inv_bench_metrics_with_gen_time (InvBenchMetrics): Metrics tracker including generation time.
+            model_result_files (List): Paths to model result files created during evaluation.
+            baseline_timing_lookup (dict): Maps each task to its baseline timing information.
+
+        Methods:
+            setup():
+                Initializes paths, loads baseline and tasks, and sets up metrics tracking.
+
+            create_evaluators_for_model(model: Model, working_dir: Path) -> List[Dict]:
+                Creates evaluator components for all tasks for a given model.
+
+            evaluate_model(model: Model, working_dir: Path) -> dict:
+                Evaluates a single model on all tasks.
+
+            get_metrics() -> None:
+                Computes and saves metrics for all evaluated models.
+
+            run() -> None:
+                Runs evaluation for all configured models.
     """
     
-    def __init__(self, config: UnifiedEvaluatorConfig):
+    def __init__(self, config: InvBenchEvaluatorConfig, model_configs: List[ModelConfig]):
         self.config = config
+        self.model_configs = model_configs
         self.setup()
         
     def setup(self):
@@ -166,16 +192,10 @@ class UnifiedEvaluator:
     
     def evaluate_model(self, model: Model, working_dir: Path) -> dict:
         """Evaluate a single model on all tasks."""
-        working_dir.mkdir(parents=True, exist_ok=True)
-        final_results_file_path = working_dir / self.config.results_filename
-        print(f"Final results file path: {final_results_file_path}")
-        # Create evaluators for this model
         evaluators = self.create_evaluators_for_model(model, working_dir)
-        
-        # Evaluate all tasks
         final_results = {
             'evaluation_timestamp': time.strftime('%Y%m%d_%H%M%S'),
-            'model_path_or_name': model.model_path_or_name,
+            'model_path_or_name': model.model_config.model_path_or_name,
             'total_tasks': len(evaluators),
             'results': []
         }
@@ -204,7 +224,7 @@ class UnifiedEvaluator:
                     '\t valid invariant: {report.syntactic_validation_result}
                     '\t final decision: {report.final_decision}
                     '\t Decision rule: {report.decision_rule}
-                    '\t Decision Procedure Timeout (UAutomizer baseline timing): {baseline_time:.2f}s
+                    '\t Decision Procedure Timeout (equals to UAutomizer median time on that task): {baseline_time:.2f}s
                     '\t Model generation time: {model_gen_time:.2f}s
                     '\t Correctness: {correctness_info}
                     '\t Usefulness: {report.invariant_usefulness_report.decision} - {report.invariant_usefulness_report.time_taken:.2f}s
@@ -219,7 +239,6 @@ class UnifiedEvaluator:
                     '\t final decision: {report.final_decision}
                 """)
             
-            # Create result entry
             task_result = {
                 'task_index': i,
                 'task_name': task.yml_file.stem,
@@ -233,20 +252,9 @@ class UnifiedEvaluator:
             
             final_results['results'].append(task_result)
         
-        # Save results
-        save_as_json(final_results, final_results_file_path)
         return final_results
     
-    def run(self):
-        """Run evaluation for all configured models."""
-        for model_path_or_name in self.config.models:
-            working_dir = EXPERIMENTS_DIR / self.config.exp_id / f"{_sanitize(model_path_or_name)}"
-            # print(f"Working directory: {working_dir}")
-            model = Model(model_path_or_name=model_path_or_name)
-            # print(f"Evaluating {model_path_or_name} with {len(self.tasks)} tasks")
-            
-            self.evaluate_model(model, working_dir)
-            self.model_result_files.append(working_dir / self.config.results_filename)
+
     
     def get_metrics(self) -> None:
         """Compute and save metrics for all evaluated models."""
@@ -285,63 +293,77 @@ class UnifiedEvaluator:
         self.inv_bench_metrics_with_gen_time.save_results_to_csv(metrics_path_with_gen_time)
         print("\n" + "="*80)
 
+    def run(self):
+        """Run evaluation for all configured models."""
+        for model_config in self.model_configs:
+            model = Model(model_config=model_config)
+            working_dir = EXPERIMENTS_DIR / self.config.exp_id / f"{model.model_config.nickname}"
+            working_dir.mkdir(parents=True, exist_ok=True)
+            final_results = self.evaluate_model(model, working_dir)
+            results_filename = f"{model.model_config.nickname}_results.json"
+            final_results_file_path = working_dir / results_filename
+            save_as_json(final_results, final_results_file_path)
+            self.model_result_files.append(str(final_results_file_path))
+            if self.config.compute_metrics:
+                self.get_metrics()
+            print(f"Evaluation results saved to {str(final_results_file_path)}")
 
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Evaluate models on InvBench dataset")
+    parser.add_argument("--project_name", type=str,default="rlinv", required=False, help="Project name")
     parser.add_argument("--exp_id", type=str, required=True, help="Experiment ID")
     parser.add_argument("--baseline_dir", type=str, default="uautomizer25_evaluation_k3_rewrite", 
                        help="Baseline directory")
-    parser.add_argument("--data_split", type=str, required=True, choices=["easy", "hard", "all"], 
-                       help="Data split")
-    parser.add_argument("--models", type=str, required=True, 
-                       help="Models (space-separated list)")
-    parser.add_argument("--limit", type=int, default=-1, 
-                       help="Limit number of tasks (default: -1 for all)")
-    parser.add_argument("--default_timeout_seconds", type=float, default=600.0, 
-                       help="Default timeout seconds (default: 600.0)")
     parser.add_argument("--property_kind", type=str, default="unreach", 
                        help="Property kind (default: unreach)")
+    parser.add_argument("--data_split", type=str, required=True, choices=["easy", "hard"], 
+                       help="Data split")
+    parser.add_argument("--default_timeout_seconds", type=float, default=600.0, 
+                       help="Default timeout seconds (default: 600.0)")
+
+    parser.add_argument("--compute_metrics", action="store_true", 
+                       help="Compute and save metrics after evaluation")
+
+    # Dataset configuration
+    parser.add_argument("--limit", type=int, default=-1, 
+                       help="Limit number of tasks (default: -1 for all)")
     parser.add_argument("--prefix", type=str, default="", 
                        help="Prefix for dataset files (default: None)")
     parser.add_argument("--suffix", type=str, default="", 
                        help="Suffix for dataset files (default: None)")
-    parser.add_argument("--compute_metrics", action="store_true", 
-                       help="Compute and save metrics after evaluation")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    models = args.models.split(" ")
-    
-    config = UnifiedEvaluatorConfig(
+    models = [
+        {
+            "client": "together",
+            "model_path_or_name": "openai/gpt-oss-20b",
+            "nickname": "gpt-oss-20b",
+            "sampling_params": {
+                "temperature": 0.0,
+                "max_tokens": 2048,
+                "reasoning_effort": "low",
+                "n": 1,
+            }
+        }
+    ]
+    models_configs = [ModelConfig.from_dict(model) for model in models]
+    evaluator_config = InvBenchEvaluatorConfig(
+        project_name=args.project_name,
         exp_id=args.exp_id,
         baseline_dir=args.baseline_dir,
         data_split=args.data_split,
-        models=models,
         limit=int(args.limit),
         default_timeout_seconds=args.default_timeout_seconds,
         property_kind=args.property_kind,
         prefix=args.prefix if args.prefix else None,
         suffix=args.suffix if args.suffix else None,
+        compute_metrics=args.compute_metrics,
     )
-    
-    print("\n" + "="*80)
-    print("Config:")
-    print(f"  exp_id: {config.exp_id}")
-    print(f"  baseline_dir: {config.baseline_dir}")
-    print(f"  data_split: {config.data_split}")
-    print(f"  models: {config.models}")
-    print(f"  limit: {config.limit}")
-    print(f"  default_timeout_seconds: {config.default_timeout_seconds}")
-    print(f"  property_kind: {config.property_kind}")
-    print(f"  prefix: {config.prefix}")
-    print(f"  suffix: {config.suffix}")
-    print("\n" + "="*80)
-    
-    evaluator = UnifiedEvaluator(config)
+    evaluator = InvBenchEvaluator(config=evaluator_config, model_configs=models_configs)
     evaluator.run()
+
     
-    if args.compute_metrics:
-        evaluator.get_metrics()
