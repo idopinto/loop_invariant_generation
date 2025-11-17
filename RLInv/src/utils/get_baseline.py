@@ -4,7 +4,6 @@ import json
 import yaml
 import sys
 import time
-import shutil
 from pathlib import Path
 from typing import Dict, List, Any, Tuple
 from tqdm import tqdm
@@ -54,6 +53,7 @@ def extract_invariants_from_log(log_file: Path) -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"Warning: Could not extract invariants from {log_file}: {e}")
         return []   
+
 def extract_invariants_from_witness(witness_yml: Path) -> List[Dict[str, Any]]:
     """
     Extract invariants from UAutomizer witness.yml file.
@@ -175,9 +175,9 @@ def process_file(
                         break
                     if last_report.decision != report.decision:
                         error_msg = f"Different decisions for the same program: {last_report.decision} and {report.decision}"
-                        result["result"] = "ERROR"
+                        result["result"] = "ERROR" # TODO: instead of ERROR, if current is  TIMEOUT don't set now, if the median is less then timeout then its okay the last decision (but later) 
                         result["reason"] += " | " + error_msg
-                        return result
+                        break
 
 
                 # print(f"Report: {report.decision} ({report.decision_reason}) in {report.time_taken} seconds")
