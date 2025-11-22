@@ -38,7 +38,7 @@ class DecisionProcedure:
         # print(f"Verifier report: {verifier_report}")
         return verifier_report
     
-    def decide(self, candidate_invariant: Predicate) -> DecisionProcedureReport:
+    def decide(self, candidate_invariant: Predicate, report: DecisionProcedureReport) -> DecisionProcedureReport:
 
         program_for_correctness = self.program.get_program_with_assertion(predicate=candidate_invariant, 
                                                      assumptions=[],
@@ -138,15 +138,16 @@ class DecisionProcedure:
         correctness_time = invariant_correctness_report.time_taken if invariant_correctness_report else 0.0
         usefulness_time = invariant_usefulness_report.time_taken if invariant_usefulness_report else 0.0
         verification_time_taken = max(correctness_time, usefulness_time)
-        # total_time_taken will be set to verification_time_taken + model_generation_time by caller
-        final_report = DecisionProcedureReport(
-            final_decision=final_decision,
-            decision_rule=decision_rule,
-            invariant_correctness_report=invariant_correctness_report,
-            invariant_usefulness_report=invariant_usefulness_report,
-            verification_time_taken=verification_time_taken,
-        )  
-        return final_report
+        
+        # Update the report with decision results (keep all other fields from the initial report)
+        report.final_decision = final_decision
+        report.decision_rule = decision_rule
+        report.invariant_correctness_report = invariant_correctness_report
+        report.invariant_usefulness_report = invariant_usefulness_report
+        report.verification_time_taken = verification_time_taken
+        report.total_time_taken = verification_time_taken + report.model_generation_time
+        
+        return report
     
     def run(self, candidate_invariant: Predicate, model_gen_time: float) -> DecisionProcedureReport:
         is_valid = syntactic_validation(candidate_invariant.content)
@@ -160,8 +161,7 @@ class DecisionProcedure:
         print(f"The candidate invariant is valid: {is_valid}")
         # print(f"The candidate invariant is logically equivalent to the target assert: {is_logicaly_equivalent}")
         if is_valid: # and not is_logicaly_equivalent:
-           final_report = self.decide(candidate_invariant)
-           final_report.total_time_taken = final_report.verification_time_taken + model_gen_time
+           final_report = self.decide(candidate_invariant, final_report)
         
         # save the final report to a json file
         report_file_path = self.reports_dir / "decision_report.json"
