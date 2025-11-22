@@ -26,6 +26,8 @@ if [ $# -lt 2 ]; then
     echo "  --property_kind <kind>          Property kind (default: unreach)"
     echo "  --prefix <prefix>               Prefix for dataset files"
     echo "  --suffix <suffix>               Suffix for dataset files"
+    echo "  --project_name <name>           Project name (default: rlinv)"
+    echo "  --baseline_is_timeout           Use baseline timeout instead of default"
     echo "  --compute_metrics               Compute and save metrics"
     echo ""
     echo "Example: sbatch run_evaluation.sh test_001 easy --limit 10 --compute_metrics"

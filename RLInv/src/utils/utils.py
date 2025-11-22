@@ -19,8 +19,14 @@ def save_as_json(content: dict, save_path: Path) -> None:
     
 def load_json(file_path: Path) -> List[Dict]:
     """Load results from JSON file."""
+    if not file_path.exists():
+        raise FileNotFoundError(f"File {file_path} does not exist")
     with open(file_path, 'r') as f:
-        return json.load(f)
+        data = json.load(f)
+        if len(data) == 0:
+            raise ValueError(f"JSON file {file_path} is empty")
+        return data
+    
     
 def load_yaml_file(file_path):
     try:

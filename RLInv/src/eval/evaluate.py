@@ -4,9 +4,9 @@ from pathlib import Path
 from shutil import copy
 from typing import List, Optional, Dict
 from tqdm import tqdm
-from dataclasses import dataclass
-from src.eval.models.model import Model, ModelConfig
-from src.eval.models.openai_responses_model import OpenAIResponsesModel
+from dataclasses import dataclass, asdict
+from src.eval.models.model import Model
+# from src.eval.models.openai_responses_model import OpenAIResponsesModel
 from src.utils.task import Task
 from src.utils.rewriter import Rewriter
 from src.utils.program import Program
@@ -15,6 +15,7 @@ from src.utils.utils import save_as_json, load_json
 from src.eval.metrics import InvBenchMetrics
 from src.utils.paths import EVALUATION_DATASET_DIR, EXPERIMENTS_DIR, UAUTOMIZER_PATHS
 import weave
+EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
 def load_tasks(
     dataset_path: Path,
@@ -24,19 +25,23 @@ def load_tasks(
     prefix: Optional[str] = None,
     suffix: Optional[str] = None,
     data_split: str = "easy"
-
 ) -> List[Task]:
-    """Load dataset from YAML files. Filter tasks based on baseline data split."""
+    """
+       Load dataset from YAML files. 
+       Filter tasks based on baseline data split.
+       Assumes the YAML files are in the dataset_path directory and the C files are in the same directory with the same name but with .c extension.
+    """
     tasks = []
     baseline_lookup = {r["file"]: r["split"] for r in baseline}
-    print(f"Loading dataset from: {dataset_path}")
-    print(f"Loading {limit} {data_split} tasks")
-    for yml_file in dataset_path.glob("*.yml"):
+    dataset_paths = list(dataset_path.glob("*.yml")) 
+    print(f"Loading dataset from: {dataset_path} with {len(dataset_paths)} tasks")
+    limit_str = "all" if limit is None or limit == -1 else limit
+    print(f"Loading {limit_str} {data_split} tasks with prefix: {prefix} and suffix: {suffix}")
+    for yml_file in dataset_paths:
         file_name = yml_file.stem
         c_filename = file_name + ".c"
         if c_filename not in baseline_lookup:
             continue
-        # c_file_path = dataset_path / base_filename
         if baseline_lookup[c_filename] != data_split:
             continue
         if limit is not None and limit != -1 and len(tasks) >= limit:
@@ -47,7 +52,10 @@ def load_tasks(
             continue
         task = Task(directory=dataset_path, filename=file_name, property_kind=property_kind)
         tasks.append(task)
-    print(tasks[0])
+    print(f"Loaded {len(tasks)} {data_split} tasks with prefix: {prefix} and suffix: {suffix}")
+    print("="*80)
+    print(f"Example task:\n {tasks[0]}")
+    print("="*80)
     return tasks
 
 def setup_weave_exp(project_name: str):
@@ -58,8 +66,8 @@ class InvBenchEvaluatorConfig:
     """Unified configuration for evaluation experiments."""
     # Experiment identification
     project_name: str = "rlinv"
-    exp_id: str = "exp_1"
-    
+    exp_id: str = "oss_test"
+    models_configs_path: Optional[str] = None
     # Dataset configuration
     baseline_dir: str = "uautomizer25_evaluation_k3_rewrite"
     data_split: str = "easy"  # "easy", "hard", "all"
@@ -70,66 +78,57 @@ class InvBenchEvaluatorConfig:
     # Evaluation configuration
     default_timeout_seconds: float = 600.0
     compute_metrics: bool = False
-    # results_filename: str = "model_results.json"
+    baseline_is_timeout: bool = False
+
 
 class InvBenchEvaluator:
     """
         A class for evaluating invariant synthesis models on the InvBench evaluation benchmark.
-
-        This class manages experiment setup, including loading datasets, configuring tasks, initializing model evaluators, 
-        tracking metrics, and storing evaluation results.
-
-        Usage:
-            1. Initialize with an InvBenchEvaluatorConfig and a list of ModelConfig instances.
-            2. The class sets up the experiment environment, loads the baseline data and tasks.
-            3. Evaluators can be created for models and results can be computed and analyzed.
-
-        Attributes:
-            config (InvBenchEvaluatorConfig): Configuration for the experiment and dataset.
-            model_configs (List[ModelConfig]): List of model configuration objects.
-            tasks (List[Task]): List of loaded evaluation tasks.
-            inv_bench_metrics_without_gen_time (InvBenchMetrics): Metrics tracker excluding generation time.
-            inv_bench_metrics_with_gen_time (InvBenchMetrics): Metrics tracker including generation time.
-            model_result_files (List): Paths to model result files created during evaluation.
-            baseline_timing_lookup (dict): Maps each task to its baseline timing information.
-
-        Methods:
-            setup():
-                Initializes paths, loads baseline and tasks, and sets up metrics tracking.
-
-            create_evaluators_for_model(model: Model, working_dir: Path) -> List[Dict]:
-                Creates evaluator components for all tasks for a given model.
-
-            evaluate_model(model: Model, working_dir: Path) -> dict:
-                Evaluates a single model on all tasks.
-
-            get_metrics() -> None:
-                Computes and saves metrics for all evaluated models.
-
-            run() -> None:
-                Runs evaluation for all configured models.
     """
     
-    def __init__(self, config: InvBenchEvaluatorConfig, model_configs: List[ModelConfig]):
+    def __init__(self, config: InvBenchEvaluatorConfig):
         self.config = config
-        self.model_configs = model_configs
         self.setup()
-        
+
+    def _save_config(self, working_dir: Path):
+        config_dict = asdict(self.config)
+        config_dict["full_exp_id"] = self.full_exp_id
+        config_dict["models_configs"] = self.model_configs 
+        save_as_json(config_dict, working_dir / f"{self.full_exp_id}_config.json")
+        print("="*80)
+        print("Config:")
+        for key, value in config_dict.items():
+            if isinstance(value, list):
+                for item in value:
+                    print(f"\t\t{item}")
+            else:
+                print(f"\t{key}: {value}")
+        print("="*80)
+        print(f"Config saved to {working_dir / f"{self.full_exp_id}_config.json"}")
+        print("="*80)
+
     def setup(self):
         """Initialize paths, load baseline, and prepare tasks."""
+        limit_str = "all" if self.config.limit is None or self.config.limit == -1 else str(self.config.limit)
+        baseline_timeout_str = "bs_timeout" if self.config.baseline_is_timeout else "no_bs_timeout"
+        self.full_exp_id = self.config.exp_id + "_" + self.config.data_split+"_"+limit_str+"_"+baseline_timeout_str
+        self.exp_dir = EXPERIMENTS_DIR / self.full_exp_id
+        self.exp_dir.mkdir(parents=True, exist_ok=True)
+        self.model_configs = load_json(file_path=Path(self.config.models_configs_path))
+        self._save_config(working_dir=self.exp_dir)
         # Derive UAutomizer version and path
-        self.uautomizer_version = self.config.baseline_dir.split("_")[0].replace("uautomizer", "")
+        self.baseline_name = self.config.baseline_dir.split("_")[0]
+        self.uautomizer_version = self.baseline_name.replace("uautomizer", "") # assume this format: uautomizerXX_evaluation_kX_rewrite
         self.uautomizer_path = UAUTOMIZER_PATHS[self.uautomizer_version]
-        # print(f"UAutomizer path: {self.uautomizer_path}")
         # Create experiment directory
-        EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
         self.baseline_file_path = EVALUATION_DATASET_DIR / self.config.baseline_dir / f"{self.config.baseline_dir}.json"
-        self.dataset_path = EVALUATION_DATASET_DIR / "orig_programs"
         # Load baseline data
         self.baseline = load_json(file_path=self.baseline_file_path)
-        if len(self.baseline) == 0:
-            raise ValueError(f"Evaluation JSON file {self.baseline_file_path} is empty")
     
+        # Baseline timing lookup
+        self.baseline_timing_lookup = {Path(r["file"]).stem: r["timings"]["median"] for r in self.baseline}
+    
+        self.dataset_path = EVALUATION_DATASET_DIR / "orig_programs"
         # Load tasks based on baseline split
         self.tasks = load_tasks(
             dataset_path=self.dataset_path,
@@ -140,15 +139,10 @@ class InvBenchEvaluator:
             suffix=self.config.suffix,
             data_split=self.config.data_split,
         )
-        # Initialize metrics trackers
-        self.inv_bench_metrics_without_gen_time = InvBenchMetrics()
-        self.inv_bench_metrics_with_gen_time = InvBenchMetrics()
         self.model_result_files = []
-        
-        # Baseline timing lookup
-        self.baseline_timing_lookup = {Path(r["file"]).stem: r["timings"]["median"] for r in self.baseline}
+        self.all_metrics = []
 
-    def create_evaluators_for_model(self, model: Model, working_dir: Path) -> List[Dict]:
+    def create_evaluators(self, working_dir: Path) -> List[Dict]:
         """Create evaluator components for all tasks for a given model."""
         evaluators = []
         
@@ -166,7 +160,11 @@ class InvBenchEvaluator:
             # Determine timeout
             task_base_filename = task.yml_file.stem
             baseline_time = self.baseline_timing_lookup.get(task_base_filename, 0.0)
-            timeout_seconds = baseline_time if baseline_time > 0 else self.config.default_timeout_seconds
+            # Set the timeout to baseline time
+            if self.config.baseline_is_timeout:
+                timeout_seconds = baseline_time if baseline_time > 0 else self.config.default_timeout_seconds
+            else:
+                timeout_seconds = self.config.default_timeout_seconds
             
             # Create decision procedure
             decision_procedure = DecisionProcedure(
@@ -191,10 +189,10 @@ class InvBenchEvaluator:
     
     def evaluate_model(self, model: Model, working_dir: Path) -> dict:
         """Evaluate a single model on all tasks."""
-        evaluators = self.create_evaluators_for_model(model, working_dir)
+        evaluators = self.create_evaluators(working_dir)
         final_results = {
             'evaluation_timestamp': time.strftime('%Y%m%d_%H%M%S'),
-            'model_path_or_name': model.model_config.model_path_or_name,
+            'model_path_or_name': model.model_config["model_path_or_name"],
             'total_tasks': len(evaluators),
             'results': []
         }
@@ -202,7 +200,7 @@ class InvBenchEvaluator:
         for i, evaluator_data in tqdm(enumerate(evaluators), total=len(evaluators), desc="Evaluating tasks"):
             task = evaluator_data['task']
             program = evaluator_data['program']
-            task_dir = evaluator_data['task_dir']
+            # task_dir = evaluator_data['task_dir']
             decision_procedure = evaluator_data['decision_procedure']
             print(f"\n--- Evaluating task {i+1}/{len(evaluators)}: {task.source_code_path.name} ---")
             
@@ -212,11 +210,10 @@ class InvBenchEvaluator:
             model_gen_time = time.perf_counter() - model_gen_start
 
             # Save model response to working dir
-            model_response_file_path = task_dir / f"model_response_{i}.json"
-            save_as_json(model_response, model_response_file_path)            # Run decision procedure
+            # model_response_file_path = task_dir / f"model_response_{i}.json"
+            # save_as_json(model_response, model_response_file_path)            # Run decision procedure
             baseline_time = self.baseline_timing_lookup.get(task.yml_file.stem, 0.0)
             report = decision_procedure.run(candidate_invariant, model_gen_time)
-            
             if report.syntactic_validation_result:
                 report.total_time_taken = report.verification_time_taken + model_gen_time
                 correctness_info = "N/A (short-circuited)" if report.invariant_correctness_report is None else f"{report.invariant_correctness_report.decision} - {report.invariant_correctness_report.time_taken:.2f}s"
@@ -249,72 +246,81 @@ class InvBenchEvaluator:
                 'uautomizer_path': str(self.uautomizer_path),
                 'arch': task.arch,
                 "baseline_time": baseline_time,
-                'report': report.to_dict()
+                'report': report.to_dict(),
+                'model_response': model_response,
             }
             
             final_results['results'].append(task_result)
         
         return final_results
-    
 
-    
-    def get_metrics(self) -> None:
-        """Compute and save metrics for all evaluated models."""
-        print("\n" + "="*80)
-        for model_result_file in self.model_result_files:
-            model_results = load_json(model_result_file)
-            model_name = model_results.get("model_path_or_name", "unknown_model").split("/")[-1]
-            print(f"Model name: {model_name}")
-            self.inv_bench_metrics_without_gen_time.add_model_with_timing_comparison(
-                model_name=model_name,
-                model_results=model_results,
-                baseline=self.baseline,
-                include_model_generation_time=False
-            )
-            self.inv_bench_metrics_with_gen_time.add_model_with_timing_comparison(
-                model_name=model_name,
-                model_results=model_results,
-                baseline=self.baseline,
-                include_model_generation_time=True
-            )
-        
-        print("\n" + "="*80)
-        metrics_dir = EXPERIMENTS_DIR / self.config.exp_id / "metrics"
-        metrics_dir.mkdir(parents=True, exist_ok=True)
-        
-        metrics_path_without_gen_time = metrics_dir / f"metrics_exp_{self.config.exp_id}_without_gen_time.csv"
-        metrics_path_with_gen_time = metrics_dir / f"metrics_exp_{self.config.exp_id}_with_gen_time.csv"
-        
-        print("Final Metrics Table without model generation time:")
-        self.inv_bench_metrics_without_gen_time.print_table()
-        print("\n" + "="*80)
-        print("Final Metrics Table with model generation time:")
-        self.inv_bench_metrics_with_gen_time.print_table()
-        
-        self.inv_bench_metrics_without_gen_time.save_results_to_csv(metrics_path_without_gen_time)
-        self.inv_bench_metrics_with_gen_time.save_results_to_csv(metrics_path_with_gen_time)
-        print("\n" + "="*80)
+    def save_metrics(self, metrics_by_model: Dict[str, Dict], metrics_dir: Path) -> None:
+            """
+            Save and print a metrics csv for all models, where each row is a model (nickname), and each column is a metric.
+            Expects metrics_by_model to be a dict:
+            {
+                "model_nickname": {'metrics_with_gen': {...}, 'metrics_without_gen': {...}},
+                ...
+            }
+            """
+            import pandas as pd
 
-    def run(self):
+            # Compose big tables across all models
+            rows_with_gen = []
+            rows_without_gen = []
+            for nickname, metrics in metrics_by_model.items():
+                row_with_gen = {'Model': nickname}
+                row_with_gen.update(metrics['metrics_with_gen'])
+                rows_with_gen.append(row_with_gen)
+
+                row_without_gen = {'Model': nickname}
+                row_without_gen.update(metrics['metrics_without_gen'])
+                rows_without_gen.append(row_without_gen)
+
+            df_with_gen = pd.DataFrame(rows_with_gen)
+            df_without_gen = pd.DataFrame(rows_without_gen)
+
+            df_with_gen.to_csv(metrics_dir / "all_models_metrics_with_gen.csv", index=False)
+            df_without_gen.to_csv(metrics_dir / "all_models_metrics_without_gen.csv", index=False)
+
+            print("Metrics WITH model generation time (with_gen):")
+            print(df_with_gen.to_string(index=False))
+            print("\nMetrics WITHOUT model generation time (without_gen):")
+            print(df_without_gen.to_string(index=False))
+
+    def run(self, save_plots: bool = True):
         """Run evaluation for all configured models."""
+        metrics_dir = EXPERIMENTS_DIR / self.full_exp_id / "metrics"
+        metrics_dir.mkdir(parents=True, exist_ok=True)
+        all_metrics_by_model = {}
         for model_config in self.model_configs:
             model = Model(model_config=model_config)
-            working_dir = EXPERIMENTS_DIR / self.config.exp_id / f"{model.model_config.nickname}"
+            working_dir = EXPERIMENTS_DIR / self.full_exp_id / f"{model.nickname}"
             working_dir.mkdir(parents=True, exist_ok=True)
             final_results = self.evaluate_model(model, working_dir)
-            results_filename = f"{model.model_config.nickname}_results.json"
-            final_results_file_path = working_dir / results_filename
-            save_as_json(final_results, final_results_file_path)
-            self.model_result_files.append(str(final_results_file_path))
+            results_filename = f"{model.nickname}_results.json"
+            model_results_path = working_dir / results_filename
+            save_as_json(final_results, model_results_path)
+            # self.model_result_files.append(str(final_results_file_path))
             if self.config.compute_metrics:
-                self.get_metrics()
-            print(f"Evaluation results saved to {str(final_results_file_path)}")
+                metrics = InvBenchMetrics.calculate_metrics(results_path=model_results_path)
+                all_metrics_by_model[model.nickname] = metrics
+                if save_plots:
+                    plot_path = metrics_dir / f"{model.nickname}_scatter_plot.html"
+                    InvBenchMetrics.plot_verification_vs_baseline(results_path=model_results_path,
+                                                                model_name=model.nickname,
+                                                                baseline_name=self.baseline_name,
+                                                                split_name=self.config.data_split,
+                                                                metrics=metrics,
+                                                                plot_path=plot_path)
+
+        self.save_metrics(metrics_by_model=all_metrics_by_model, metrics_dir=metrics_dir)
 
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Evaluate models on InvBench dataset")
     parser.add_argument("--project_name", type=str,default="rlinv", required=False, help="Project name")
-    parser.add_argument("--exp_id", type=str, required=True, help="Experiment ID")
+    parser.add_argument("--exp_id", type=str, default="oss_test", help="Experiment ID, /configs/models_configs/<exp_id>.json is expected.")
     parser.add_argument("--baseline_dir", type=str, default="uautomizer25_evaluation_k3_rewrite", 
                        help="Baseline directory")
     parser.add_argument("--property_kind", type=str, default="unreach", 
@@ -334,45 +340,17 @@ def parse_args():
                        help="Prefix for dataset files (default: None)")
     parser.add_argument("--suffix", type=str, default="", 
                        help="Suffix for dataset files (default: None)")
+    parser.add_argument("--baseline_is_timeout", action="store_true", 
+                       help="Use baseline timeout instead of default timeout (default: False)")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    models = [
-        {
-            "client": "together",
-            "model_path_or_name": "openai/gpt-oss-20b",
-            "nickname": "gpt-oss-20b",
-            "sampling_params": {
-                "temperature": 0.0,
-                "max_tokens": 2048,
-                "reasoning_effort": "low",
-                "n": 1,
-            }
-        },
-
-        # {
-        #     "client": "openai",
-        #     "model_path_or_name": "gpt-5.1",
-        #     "nickname": "gpt-5.1",
-        #     "sampling_params": {
-        #         "reasoning": {"effort": "medium","summary": "auto"},
-        #         "text": {"verbosity": "low"},
-        #         # "temperature": 0.0,
-        #         "max_output_tokens": 2048,
-        #     }
-        # },
-    ]
-    models_configs = [ModelConfig.from_dict(model) for model in models]
-    print("="*80)
-    print("Models configs:")
-    for model_config in models_configs:
-        print(model_config)
-    print("="*80)
     evaluator_config = InvBenchEvaluatorConfig(
         project_name=args.project_name,
         exp_id=args.exp_id,
+        models_configs_path=f"configs/models_configs/{args.exp_id}.json",
         baseline_dir=args.baseline_dir,
         data_split=args.data_split,
         limit=int(args.limit),
@@ -381,8 +359,9 @@ if __name__ == "__main__":
         prefix=args.prefix if args.prefix else None,
         suffix=args.suffix if args.suffix else None,
         compute_metrics=args.compute_metrics,
+        baseline_is_timeout=args.baseline_is_timeout,
     )
-    evaluator = InvBenchEvaluator(config=evaluator_config, model_configs=models_configs)
-    evaluator.run()
+    evaluator = InvBenchEvaluator(config=evaluator_config)
+    evaluator.run(save_plots=True)
 
     

@@ -136,7 +136,9 @@ class Rewriter:
     def clang_format(self):
         """Format code using clang-format with custom style configuration."""
         # Use unique temporary filename to avoid conflicts with parallel jobs
-        tmp_file = Path(tempfile.mkstemp(suffix='.c', prefix='clang_format_')[1])
+        fd, path = tempfile.mkstemp(suffix='.c', prefix='clang_format_')
+        os.close(fd)
+        tmp_file = Path(path)
         try:
             with tmp_file.open('w') as out_file:
                 out_file.write(self.new_code)
@@ -244,7 +246,9 @@ class Rewriter:
         self.new_code = "\n".join(new_lines)
 
     def remove_comments(self):
-        tmp_file = Path(tempfile.mkstemp(suffix='.c', prefix='gcc_preprocess_')[1])
+        fd, path = tempfile.mkstemp(suffix='.c', prefix='gcc_preprocess_')
+        os.close(fd)
+        tmp_file = Path(path)
         try:
             tmp_file.write_text(self.new_code)
             command = f"gcc -E -P {tmp_file}"

@@ -1,0 +1,22 @@
+[
+    {
+        "client": "together",
+        "model_path_or_name": "openai/gpt-oss-20b",
+        "sampling_params": {
+            "temperature": 0.0,
+            "max_tokens": 4096,
+            "reasoning_effort": "low",
+            "n": 1
+        }
+    },
+    {
+        "client": "together",
+        "model_path_or_name": "openai/gpt-oss-120b",
+        "sampling_params": {
+            "temperature": 0.0,
+            "max_tokens": 4096,
+            "reasoning_effort": "low",
+            "n": 1
+        }
+    }
+]

@@ -22,7 +22,6 @@ class ModelConfig:
             nickname=model_config["nickname"]
         )
 
-
 def label_assertion_points(assertion_points: dict):
     """Label assertion points and create bidirectional mapping."""
     labeled, name_to_line = {}, {}
@@ -56,7 +55,7 @@ def build_prompt(formatted_program: str, assertion_points: dict,
     locations = [f"  Line {labeled_points[ln]}: Line {ln} ({', '.join([a.name for a in assertion_points[ln]])})" 
                     for ln in sorted_lines]
     available_labels = ', '.join([labeled_points[ln] for ln in sorted_lines])
-    user_msg = f"""Given the following C program, generate a loop invariant its location in the program from the available locations.
+    user_msg = f"""Given the following C program, generate only one loop invariant in one of the available locations.
 ```c
 {formatted_program}
 ```

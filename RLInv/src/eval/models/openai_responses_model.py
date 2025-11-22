@@ -44,7 +44,7 @@ class OpenAIResponsesModel:
         assertion_points = program.assertion_points
         if not assertion_points:
             print("Warning: No assertion points found, using line 0 as default")
-            return Predicate(content="1 > < 1", line_number=0) # dummy invalid invariant
+            return Predicate(content="1 > < 1", line_number=0), {} # dummy invalid invariant
         
         try:
             labeled_points, name_to_line = label_assertion_points(assertion_points)
@@ -71,5 +71,5 @@ class OpenAIResponsesModel:
         except Exception as e:
             print(f"Error generating invariant: {e}")
             fallback_line = sorted(assertion_points.keys())[0] if assertion_points else 0
-            return Predicate(content="1 > < 1", line_number=fallback_line) # dummy invalid invariant
+            return Predicate(content="1 > < 1", line_number=fallback_line), {} # dummy invalid invariant
 

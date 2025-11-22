@@ -38,7 +38,7 @@ class DecisionProcedure:
         # print(f"Verifier report: {verifier_report}")
         return verifier_report
     
-    def decide(self, candidate_invariant: Predicate, model_gen_time: float = 0.0) -> DecisionProcedureReport:
+    def decide(self, candidate_invariant: Predicate) -> DecisionProcedureReport:
 
         program_for_correctness = self.program.get_program_with_assertion(predicate=candidate_invariant, 
                                                      assumptions=[],
@@ -142,27 +142,27 @@ class DecisionProcedure:
         final_report = DecisionProcedureReport(
             final_decision=final_decision,
             decision_rule=decision_rule,
-            program=self.program,
-            target_assert=self.target_assert,
-            target_property_file_path=self.target_property_file_path,
-            candidate_invariant=candidate_invariant,
-            syntactic_validation_result=True,
             invariant_correctness_report=invariant_correctness_report,
             invariant_usefulness_report=invariant_usefulness_report,
             verification_time_taken=verification_time_taken,
-            model_generation_time=model_gen_time,
         )  
         return final_report
     
     def run(self, candidate_invariant: Predicate, model_gen_time: float) -> DecisionProcedureReport:
-        final_report = DecisionProcedureReport(model_generation_time=model_gen_time)
         is_valid = syntactic_validation(candidate_invariant.content)
+        final_report = DecisionProcedureReport(program=self.program,
+                                               target_assert=self.target_assert, 
+                                               target_property_file_path=self.target_property_file_path,
+                                               candidate_invariant=candidate_invariant,
+                                               syntactic_validation_result=is_valid,
+                                               model_generation_time=model_gen_time)
         # is_logicaly_equivalent = check_semantic_equivalence(candidate_invariant.content, self.target_assert.content)
         print(f"The candidate invariant is valid: {is_valid}")
         # print(f"The candidate invariant is logically equivalent to the target assert: {is_logicaly_equivalent}")
         if is_valid: # and not is_logicaly_equivalent:
-           final_report = self.decide(candidate_invariant, model_gen_time)
+           final_report = self.decide(candidate_invariant)
            final_report.total_time_taken = final_report.verification_time_taken + model_gen_time
+        
         # save the final report to a json file
         report_file_path = self.reports_dir / "decision_report.json"
         final_report.save_json(report_file_path)
