@@ -20,7 +20,6 @@ property_file_path = PROPERTIES_DIR / "unreach-call.prp"
 ARCH = "32bit"
 DIFFICULTY_THRESHOLD = 30
 
-
 def extract_invariants_from_log(log_file: Path) -> List[Dict[str, Any]]:
     """
     Extract invariants from UAutomizer log file.
@@ -169,9 +168,10 @@ def process_file(
                     uautomizer_path=uautomizer_path,
                     arch=ARCH
                 )
+
                 if last_report:
                     if last_report.decision == "TIMEOUT":
-                        print("Timeout in the last iteration, stopping.")
+                        print("Timeout in the last iteration, stopping to save time.")
                         break
                     if last_report.decision != report.decision:
                         error_msg = f"Different decisions for the same program: {last_report.decision} and {report.decision}"
@@ -190,8 +190,9 @@ def process_file(
             result["reason"] = report.decision_reason
             
             if report.reports_dir:
+                # Extracting the invariant only from the last verifier run.
                 witness_yml = Path(report.reports_dir) / f"{'rf' if rewrite else 'base'}_{c_file.stem}_witness.yml"
-                if not witness_yml.exists():
+                if not witness_yml.exists(): # if the witness file does not exist, then we need to extract the invariants from the log file happens with UAutomizer23
                     log_file = Path(report.reports_dir) / f"{'rf' if rewrite else 'base'}_{c_file.stem}.log"
                     invariants = extract_invariants_from_log(log_file)
                     result["invariants"] = invariants
