@@ -18,3 +18,4 @@ Ultimate.log
 example_reports/
 timing_test_reports/
 .cursor/
+.ruff_cache/

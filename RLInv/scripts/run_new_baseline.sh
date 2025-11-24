@@ -2,7 +2,7 @@
 #SBATCH --job-name=baseline
 #SBATCH --output=slurm/train_baseline_%j.out
 #SBATCH --error=slurm/train_baseline_%j.err
-#SBATCH --time=72:00:00
+#SBATCH --time=100:00:00
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=16G
 

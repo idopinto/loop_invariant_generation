@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from typing import Tuple, Dict
 import os
 import re
-from dataclasses import asdict
 from src.eval.models.model_utils import build_prompt, parse_response, format_program_with_labels, label_assertion_points
 
 load_dotenv()

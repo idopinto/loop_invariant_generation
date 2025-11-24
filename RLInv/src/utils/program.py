@@ -7,7 +7,8 @@ from .predicate import Predicate
 PATCH = ('void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\n'
          'void assume(int cond) { if (!cond) { abort(); } }\n')
 
-
+# PATCH_LINES = ['void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }',
+#                'void assume(int cond) { if (!cond) { abort(); } }']
 class AssertionPointAttributes(Enum):
     BeforeLoop = 1
     InLoop = 2
@@ -15,10 +16,13 @@ class AssertionPointAttributes(Enum):
     BeginningOfLoop = 4
     EndOfLoop = 5
 
-
 class Program:
     def __init__(self, lines: List[str], replacement: Dict[str, str]):
         self.lines: List[str] = []
+        
+        # lines_plus_patch = PATCH_LINES + lines
+        # for i, line in enumerate(lines_plus_patch):
+        #     print(f"{i}: {line}")
         self.assertions: List[Predicate] = []  # The assertion to add after the corresponding line number
         self.lemmas: List[Predicate] = []  # The lemmas to add after the corresponding line number
         self.assertion_points: Dict[
@@ -98,28 +102,10 @@ class Program:
 
     @staticmethod
     def assume_predicate(lines: List[str], predicate: Predicate):
-        # Extract indentation from the current line
-        # Handle case where line might have been modified (multiple insertions)
-        # current_line = lines[predicate.line_number]
-        # Get the first line (before any newlines from previous insertions)
-        # first_line = current_line.split('\n')[0]
-        # Extract indentation from the first line
-        # indent = len(first_line) - len(first_line.lstrip())
-        # indent_str = first_line[:indent] if indent > 0 else ""
-        # lines[predicate.line_number] += f"\n{indent_str}assume({predicate.content});"
         lines[predicate.line_number] += f"\nassume({predicate.content});"
 
     @staticmethod
     def assert_predicate(lines: List[str], predicate: Predicate):
-        # Extract indentation from the current line
-        # Handle case where line might have been modified (multiple insertions)
-        # current_line = lines[predicate.line_number]
-        # Get the first line (before any newlines from previous insertions)
-        # first_line = current_line.split('\n')[0]
-        # Extract indentation from the first line
-        # indent = len(first_line) - len(first_line.lstrip())
-        # indent_str = first_line[:indent] if indent > 0 else ""
-        # lines[predicate.line_number] += f"\n{indent_str}assert({predicate.content});"
         lines[predicate.line_number] += f"\nassert({predicate.content});"
 
     def get_program_with_assertion(self, predicate: Optional[Predicate], assumptions: List[Predicate],
@@ -136,7 +122,7 @@ class Program:
 
         for lemma in self.lemmas:
             self.assume_predicate(lines, lemma)
-
+        # print(f"    Lines after lemmas: {lines}")
         for line_number, name in assertion_points.items():
             lines[line_number] += f"\n// Line {name}"
 
@@ -169,10 +155,10 @@ class Program:
                 program += line + "\n"
         program = program[:-1]
 
-        if dump:
-            print("----------------------")
-            print(program)
-            print("----------------------")
+        # if dump:
+        #     print("----------------------")
+        #     print(program)
+        #     print("----------------------")
         return program
 
     def decide_assertion_point(self, goal: Predicate):
@@ -217,26 +203,26 @@ class Program:
             print(f"Deciding assertion point done: picked line {closest_line}.")
         return closest_line, self.assertion_points[closest_line]
 
-    def dump(self):
-        print("\nDumping program...")
-        print("\nProgram without assertion:")
-        for i, line in enumerate(self.lines):
-            print(f"\t{i}: {line} // In loop: {self.in_loop[i]}, unclosed bracket: {self.unclosed_brackets[i]}")
-        print("\nAssertion:")
-        for assertion in self.assertions:
-            print(f"\tassert {assertion.content} after line {assertion.line_number}")
-        print("\nLemmas:")
-        for predicate in self.lemmas:
-            print(f"\tassume {predicate.content} after line {predicate.line_number}")
-        print("\nReplacements for GPT:")
-        for before, after in self.replacement_for_GPT.items():
-            print(f"\t{before} => {after}")
+    # def dump(self):
+    #     print("\nDumping program...")
+    #     print("\nProgram without assertion:")
+    #     for i, line in enumerate(self.lines):
+    #         print(f"\t{i}: {line} // In loop: {self.in_loop[i]}, unclosed bracket: {self.unclosed_brackets[i]}")
+    #     print("\nAssertion:")
+    #     for assertion in self.assertions:
+    #         print(f"\tassert {assertion.content} after line {assertion.line_number}")
+    #     print("\nLemmas:")
+    #     for predicate in self.lemmas:
+    #         print(f"\tassume {predicate.content} after line {predicate.line_number}")
+    #     print("\nReplacements for GPT:")
+    #     for before, after in self.replacement_for_GPT.items():
+    #         print(f"\t{before} => {after}")
 
-        print("\nPotential assertion points:")
-        for line_number, attributes in self.assertion_points.items():
-            print(f"After line {line_number}: {', '.join(map(lambda x: x.name, attributes))}")
+    #     print("\nPotential assertion points:")
+    #     for line_number, attributes in self.assertion_points.items():
+    #         print(f"After line {line_number}: {', '.join(map(lambda x: x.name, attributes))}")
 
-        print("\nDumping program - done\n")
+    #     print("\nDumping program - done\n")
         
     def __repr__(self):
         lines = []

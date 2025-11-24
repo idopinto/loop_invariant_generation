@@ -104,11 +104,15 @@ def reformat(file_path: Path) -> Tuple[str, bool, bool]:
     program = Program(r.lines_to_verify, r.replacement)
     problems = {
         "no_target_assertion": False,
+        "multiple_target_assertions": False,
         "bad_syntax": False,
         "no_invariants": False,
     }
     if len(program.assertions) == 0:
         problems["no_target_assertion"] = True
+        return "", problems
+    if len(program.assertions) > 1:
+        problems["multiple_target_assertions"] = True
         return "", problems
     target_assert = program.assertions[0] # assuming there is only one assertion in the program
     program_str= program.get_program_with_assertion(predicate=target_assert, 
@@ -155,11 +159,10 @@ def process_file(
     }
     if not rf_problems["no_target_assertion"] and not rf_problems["bad_syntax"]:
         try:
-            last_report = None
+            decision_time = {}
             for i in tqdm(range(k), desc="Running UAutomizer", leave=False):
                 program_to_verify = rf_program_path if rewrite else base_program_path
                 print("Verifying the program: ", program_to_verify)
-
                 report = run_uautomizer(
                     program_path=program_to_verify,
                     property_file_path=property_file_path,
@@ -168,25 +171,20 @@ def process_file(
                     uautomizer_path=uautomizer_path,
                     arch=ARCH
                 )
-
-                if last_report:
-                    if last_report.decision == "TIMEOUT":
-                        print("Timeout in the last iteration, stopping to save time.")
-                        break
-                    if last_report.decision != report.decision:
-                        error_msg = f"Different decisions for the same program: {last_report.decision} and {report.decision}"
-                        result["result"] = "ERROR" # TODO: instead of ERROR, if current is  TIMEOUT don't set now, if the median is less then timeout then its okay the last decision (but later) 
-                        result["reason"] += " | " + error_msg
-                        break
-
-
-                # print(f"Report: {report.decision} ({report.decision_reason}) in {report.time_taken} seconds")
+                decision_time[report.time_taken] = report.decision
+                print(f"Report: {report.decision} ({report.decision_reason}) in {report.time_taken} seconds")
                 result["timings"]["all"].append(report.time_taken)
-                last_report = report
+                # last_report = report
             result["timings"]["average"] = statistics.mean(result["timings"]["all"])
             result["timings"]["median"] = statistics.median(result["timings"]["all"])
+            # {600: TIMEOUT, 550: TRUE, 600: TIMEOUT} -> median
+            print(f"Decision time dict: {decision_time}")
+            if result["timings"]["median"] < timeout_seconds:
+                result["result"] = decision_time[result["timings"]["median"]]
+            else:
+                result["result"] = "TIMEOUT"
             # result["time"] = report.time_taken
-            result["result"] = report.decision
+            # result["result"] = report.decision
             result["reason"] = report.decision_reason
             
             if report.reports_dir:
@@ -208,6 +206,8 @@ def process_file(
     else:
         if rf_problems["no_target_assertion"]:
             result["reason"] += " | no_target_assertion"
+        if rf_problems["multiple_target_assertions"]:
+            result["reason"] += " | multiple_target_assertions"
         if rf_problems["bad_syntax"]:
             result["reason"] += " | bad_syntax"
     return result
@@ -238,7 +238,7 @@ def load_data_checkpoint(results_file_path: Path) -> Tuple[List[Dict[str, Any]],
 def run_baseline(args: argparse.Namespace) -> None:
     data_dir = DATASET_DIR / args.dataset_type / "orig_programs"
     uautomizer_path = UAUTOMIZER_PATHS[args.uautomizer_version]
-    folder_name = f"uautomizer{args.uautomizer_version}_{args.dataset_type}_k{args.k}_{'rewrite' if args.rewrite else 'no_rewrite'}"
+    folder_name = f"uautomizer{args.uautomizer_version}_{args.dataset_type}_k{args.k}_{'rewrite' if args.rewrite else 'no_rewrite'}_"
     output_dir = DATASET_DIR / args.dataset_type / folder_name
     reports_dir = output_dir / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)

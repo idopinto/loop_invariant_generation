@@ -168,4 +168,3 @@ class DecisionProcedure:
         final_report.save_json(report_file_path)
         print(f"Decision report saved to:\n\t {str(report_file_path)}")
         return final_report
-    
