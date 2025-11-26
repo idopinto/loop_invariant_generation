@@ -1,0 +1,46 @@
+model_name: "openai/gpt-oss-20b"
+dataset_name: "idopinto/rlinv_train_sft_test"
+
+sft_config:
+  learning_rate: 2e-4
+  gradient_checkpointing: True
+  num_train_epochs: 1
+  logging_steps: 1
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  max_length: 2048
+  warmup_ratio: 0.03
+  lr_scheduler_type: "cosine_with_min_lr"
+  lr_scheduler_kwargs: {"min_lr_rate": 0.1}
+  output_dir: "gpt-oss-20b-rlinv-sft"
+  report_to: "wandb"
+  push_to_hub: True
+
+lora_config:
+  r: 8
+  lora_alpha: 16
+  target_modules: "all-linear"
+  target_parameters:
+    - "7.mlp.experts.gate_up_proj"
+    - "7.mlp.experts.down_proj"
+    - "15.mlp.experts.gate_up_proj"
+    - "15.mlp.experts.down_proj"
+    - "23.mlp.experts.gate_up_proj"
+    - "23.mlp.experts.down_proj"
+  lora_dropout: 0.0
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+model_config:
+  attn_implementation: "eager"
+  dtype: "bfloat16"
+  quantization_config: "Mxfp4Config(dequantize=True)"
+  use_cache: False
+  device_map: "auto"
+
+model_sampling_config:
+  max_new_tokens: 512
+  do_sample: True
+  temperature: 0.6
+  top_p: 0.9
+  pad_token_id: tokenizer.eos_token_id

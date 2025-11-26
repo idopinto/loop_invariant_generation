@@ -164,7 +164,8 @@ if __name__ == "__main__":
     args = parse_args()
     # program_path = EVALUATION_DATASET_DIR / 'orig_programs' / f"{args.program_name}.c"
     args.program_name = "fermat1-ll_valuebound5_4_base"
-    program_path = Path("/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/experiments/oss_exp_full_hard_all_bs_timeout/gpt-oss-120b-high/task_27_fermat1-ll_valuebound5_4/code/base.c")
+    # program_path = Path("/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/experiments/oss_exp_full_hard_all_bs_timeout/gpt-oss-120b-high/task_27_fermat1-ll_valuebound5_4/code/base.c")
+    program_path = Path("/cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv/experiments/uautomizer_self_verification_usefulness/1146_1/inv_0/inv_0_code_for_usefulness.c")
     property_file_path = PROPERTIES_DIR / f"{args.property_name}.prp"
     reports_dir = EXPERIMENTS_DIR / args.reports_dir / args.program_name
     reports_dir.mkdir(parents=True, exist_ok=True)

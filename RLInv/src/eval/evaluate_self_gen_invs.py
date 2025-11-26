@@ -124,10 +124,10 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    args.json_file = "dataset/training/uautomizer25_training_k1_rewrite/uautomizer25_training_k1_rewrite.json"
-    args.output_dir = "experiments/uautomizer_self_verification_usefulness"
-    args.timeout = 600
-    args.limit = -1
+    # args.json_file = "dataset/training/uautomizer25_training_k1_rewrite/uautomizer25_training_k1_rewrite.json"
+    # args.output_dir = "experiments/uautomizer_self_verification_usefulness"
+    # args.timeout = 600
+    # args.limit = -1
     
     check_if_self_generated_invariants_are_useful(
         json_file_path=args.json_file,

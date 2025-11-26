@@ -19,3 +19,4 @@ example_reports/
 timing_test_reports/
 .cursor/
 .ruff_cache/
+trained_models/
