@@ -3,19 +3,19 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
+#SBATCH --mem=16G
 #SBATCH --time=12:00:00
-#SBATCH --output=slurm/eval_self_%j.out
-#SBATCH --error=slurm/eval_self_%j.err
+#SBATCH --output=slurm/eval_self_test_%j.out
+#SBATCH --error=slurm/eval_self_test_%j.err
 set -e
 cd /cs/labs/guykatz/idopinto12/projects/loop_invariant_generation/RLInv
 
 source .venv/bin/activate
 
 srun python -u src/eval/evaluate_self_gen_invs.py \
-  --json-file dataset/training/uautomizer25_training_k1_rewrite/uautomizer25_training_k1_rewrite.json \
+  --json-file dataset/training/uautomizer25_training_k1_rewrite_/uautomizer25_training_k1_rewrite_filtered.json \
   --uautomizer-version 25 \
-  --output-dir experiments/uautomizer_self_verification_usefulness \
+  --output-dir uautomizer25_eval_self_gen_invs \
   --timeout 600 \
-  --limit 250
-
+  --limit 500 \
+  # --timeout-is-baseline
