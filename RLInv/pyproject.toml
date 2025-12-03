@@ -39,6 +39,7 @@ dependencies = [
     "tqdm>=4.67.1",
     "trackio>=0.8.1",
     "trl>=0.24.0",
+    "unsloth>=2025.7.2",
     "wandb>=0.22.3",
     "weave>=0.52.16",
     "z3-solver>=4.15.4.0",

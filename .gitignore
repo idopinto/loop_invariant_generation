@@ -20,3 +20,4 @@ timing_test_reports/
 .cursor/
 .ruff_cache/
 trained_models/
+gpt-oss-20b-*
