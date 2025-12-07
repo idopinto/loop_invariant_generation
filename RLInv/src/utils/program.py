@@ -7,8 +7,6 @@ from .predicate import Predicate
 PATCH = ('void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }\n'
          'void assume(int cond) { if (!cond) { abort(); } }\n')
 
-# PATCH_LINES = ['void assert(int cond) { if (!(cond)) { ERROR : { reach_error(); abort(); } } }',
-#                'void assume(int cond) { if (!cond) { abort(); } }']
 class AssertionPointAttributes(Enum):
     BeforeLoop = 1
     InLoop = 2
@@ -19,10 +17,6 @@ class AssertionPointAttributes(Enum):
 class Program:
     def __init__(self, lines: List[str], replacement: Dict[str, str]):
         self.lines: List[str] = []
-        
-        # lines_plus_patch = PATCH_LINES + lines
-        # for i, line in enumerate(lines_plus_patch):
-        #     print(f"{i}: {line}")
         self.assertions: List[Predicate] = []  # The assertion to add after the corresponding line number
         self.lemmas: List[Predicate] = []  # The lemmas to add after the corresponding line number
         self.assertion_points: Dict[
@@ -154,11 +148,6 @@ class Program:
             for line in lines:
                 program += line + "\n"
         program = program[:-1]
-
-        # if dump:
-        #     print("----------------------")
-        #     print(program)
-        #     print("----------------------")
         return program
 
     def decide_assertion_point(self, goal: Predicate):

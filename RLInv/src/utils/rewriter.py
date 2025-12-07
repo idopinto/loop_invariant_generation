@@ -17,6 +17,34 @@ class Rewriter:
     def __init__(self, filename: Path, rewrite=True, handle_reach_error=False):
         """Initialize rewriter with C code from file."""
         self.code = filename.read_text().strip()
+        self._initialize(rewrite=rewrite, handle_reach_error=handle_reach_error)
+    
+    @classmethod
+    def from_string(cls, code: str, rewrite: bool = True, handle_reach_error: bool = False) -> "Rewriter":
+        """
+        Create a Rewriter instance from a code string instead of a file.
+        
+        Args:
+            code: The C code as a string.
+            rewrite: Whether to apply rewriting transformations.
+            handle_reach_error: Whether to handle reach_error patterns.
+            
+        Returns:
+            A configured Rewriter instance.
+        """
+        instance = object.__new__(cls)
+        instance.code = code.strip()
+        instance._initialize(rewrite=rewrite, handle_reach_error=handle_reach_error)
+        return instance
+    
+    def _initialize(self, rewrite: bool, handle_reach_error: bool):
+        """
+        Common initialization logic shared by __init__ and from_string.
+        
+        Args:
+            rewrite: Whether to apply rewriting transformations.
+            handle_reach_error: Whether to handle reach_error patterns.
+        """
         self.new_code = self.code
         if rewrite:
             self.new_code = re.sub(r'^\s*#include\s+[<"].*?[>"]\s*$', '', self.new_code, flags=re.MULTILINE)

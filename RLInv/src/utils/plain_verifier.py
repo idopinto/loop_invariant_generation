@@ -8,17 +8,8 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from src.utils.paths import UAUTOMIZER_PATHS, EVALUATION_DATASET_DIR, EXPERIMENTS_DIR, PROPERTIES_DIR    
+from src.utils.paths import UAUTOMIZER_PATHS, EXPERIMENTS_DIR, PROPERTIES_DIR    
 from src.utils.utils import write_file, parse_uautomizer_output
-
-
-# root_dir = Path(__file__).parent.parent.parent
-# verifier_executable_paths = {
-#     "23": root_dir / "tools" / "UAutomizer23" / "Ultimate.py",
-#     "24": root_dir / "tools" / "UAutomizer24" / "Ultimate.py",
-#     "25": root_dir / "tools" / "UAutomizer25" / "Ultimate.py",
-#     "26": root_dir / "tools" / "UAutomizer26" / "Ultimate.py",
-# }
 
 @dataclass
 class VerifierCallReport:

@@ -12,7 +12,8 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import after adding to path (noqa: E402 is intentional)
-from src.utils.plain_verifier import run_uautomizer, Decision  # noqa: E402
+from src.utils.plain_verifier import run_uautomizer, VerifierCallReport  # noqa: E402
+from src.utils.paths import UAUTOMIZER_PATHS, PROPERTIES_DIR  # noqa: E402
 
 
 def setup_deterministic_environment():
@@ -126,7 +127,7 @@ def run_timing_test(
         Dictionary with timing statistics and determinism test results
     """
     timings: List[float] = []
-    decisions: List[Decision] = []
+    decisions: List[str] = []
     errors: List[bool] = []
     
     # Setup deterministic environment
@@ -175,20 +176,21 @@ def run_timing_test(
             # This would require modifying plain_verifier.py to accept env/affinity params
             
             report = run_uautomizer(
-                c_file_path=c_file_path,
+                program_path=c_file_path,
                 property_file_path=property_file_path,
                 reports_dir=run_reports_dir,
                 arch=arch,
                 timeout_seconds=timeout_seconds,
-                uautomizer_path=uautomizer_path
+                uautomizer_path=uautomizer_path or UAUTOMIZER_PATHS["25"]
             )
             
             timings.append(report.time_taken)
             decisions.append(report.decision)
-            errors.append(report.error or report.timeout)
+            is_error = report.decision in ("ERROR", "TIMEOUT", "UNKNOWN")
+            errors.append(is_error)
             
-            status = "✓" if not (report.error or report.timeout) else "✗"
-            print(f"{status} {report.time_taken:.3f}s - {report.decision.name}")
+            status = "✓" if not is_error else "✗"
+            print(f"{status} {report.time_taken:.3f}s - {report.decision}")
     finally:
         # Restore original environment
         for key, value in original_env.items():
@@ -247,7 +249,7 @@ def run_timing_test(
         "is_deterministic": is_deterministic,
         "all_same_decision": all_same_decision,
         "all_no_errors": all_no_errors,
-        "decisions": [d.name for d in decisions],
+        "decisions": decisions,
         "errors": errors,
         "system_checks": system_checks,
         "deterministic_mode": deterministic_mode,

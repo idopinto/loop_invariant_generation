@@ -1,14 +1,14 @@
 [
     {
         "client": "huggingface",
-        "model_path_or_name": "idopinto/gpt-oss-20b-inv-gen-sft",
+        "model_path_or_name": "idopinto/gpt-oss-20b-rlinv-sft-sep",
         "base_model": "openai/gpt-oss-20b",
         "is_peft": true,
         "sampling_params": {
             "max_new_tokens": 2048,
-            "reasoning_effort": "medium",
             "do_sample": true,
-            "temperature": 0.6
+            "temperature": 0.6,
+            "top_p": 0.9
         },
         "model_kwargs": {
             "device_map": "auto",

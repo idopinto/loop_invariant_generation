@@ -29,7 +29,7 @@ sft_config:
   lr_scheduler_kwargs: {"min_lr_rate": 0.1}
   output_dir: "gpt-oss-20b-rlinv-sft-sep"
   report_to: "wandb"
-  push_to_hub: True
+  push_to_hub: False
 
 lora_config:
   r: 8
